@@ -1,9 +1,9 @@
 using CSV
 using DataFrames
 
-include("FAST_LDA(2,2,infty).jl")
-include("FAST_LDA(3,3,3).jl")
-include("SPARSE_LDA.jl")
+include("FastLDA(2,2,infty).jl")
+include("FastLDA(3,3,3).jl")
+include("SparseLDA.jl")
 
 file_path = "AbstractsMPCSST.csv"
 
