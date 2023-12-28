@@ -1,1 +1,1 @@
-# Fast_LDA_Sparse_LDA
+# FastLDA_SparseLDA
