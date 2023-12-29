@@ -1,8 +1,5 @@
 module FAST_LDA
 
-export PTM, init_alpha,init_beta,init_vars, sort_update, FAST_GIBBS, increase, 
-subtract, prior_update, PERPL, update_and_sample, sample_Ndt, sample_Ntw, Run_Fast
-
 using SpecialFunctions
 
 mutable struct PTM
@@ -16,8 +13,8 @@ mutable struct PTM
     z::Vector{Vector{Vector{Int64}}}
     alpha::Vector{Float64}
     beta::Float64
-    SP::Int64   
-    PERP::Float64
+    I::Int64   
+    PX::Float64  
     pdw::Vector{Vector{Float64}}
     Ntw_avg::Matrix{Float64}   
     Ndt_avg::Matrix{Float64}  
@@ -27,12 +24,10 @@ end
 
 function init_alpha(F::PTM, alpha)
     F.alpha = alpha 
-    return
 end
 
 function init_beta(F::PTM, beta)
     F.beta = beta
-    return
 end
 
 function init_vars(F::PTM, corpus_train) 
@@ -64,7 +59,7 @@ function init_vars(F::PTM, corpus_train)
     end 
 end
 
-function sort_update(T, Nt, ind, t_new, t_old)
+function sort_update(T::Int64, Nt::Vector{Int64}, ind::Vector{Int64}, t_new::Int64, t_old::Int64)
     prev = 0
 
     t_new = ind[t_new]
@@ -90,17 +85,37 @@ function subtract(F::PTM, d::Int64, w::Int64, t_old::Int64)
     F.Nt[t_old] -= 1      
     F.Ndt[d, t_old] -= 1  
     F.Ntw[t_old, w] -= 1 
-    return
 end
+
+function update_norms(F::PTM, a::Vector{Float64}, b::Vector{Float64}, d::Int64, w::Int64, 
+    t_new::Int64, t_old::Int64, d_old::Int64, w_old::Int64, indx_dt::Matrix{Int64})
+    T = F.T
+
+    if d_old != t_old
+        a[d] -= (F.alpha[d_old] + F.Ndt[d, d_old] - 1)^2
+        a[d] -= (F.alpha[t_old] + F.Ndt[d, t_old] + 1)^2
+        a[d] += (F.alpha[d_old] + F.Ndt[d, d_old])^2
+        a[d] += (F.alpha[t_old] + F.Ndt[d, t_old])^2
+
+        sort_update(T, F.Ndt[d, :], indx_dt[d, :], d_old, t_new)
+    end
+
+    if w_old != t_old
+        b[w] -= (F.beta + F.Ntw[w_old, w] - 1)^2
+        b[w] -= (F.beta + F.Ntw[t_old, w] + 1)^2
+        b[w] += (F.beta + F.Ntw[w_old, w])^2
+        b[w] += (F.beta + F.Ntw[t_old, w])^2
+    end
+end
+
 
 function increase(F::PTM, d::Int64, w::Int64, t_new::Int64)   
     F.Nt[t_new] += 1
     F.Ndt[d, t_new] += 1  
     F.Ntw[t_new, w] += 1
-    return
 end
 
-function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
+function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
     D, T, W = F.D, F.T, F.W
     iter = burnin + sample 
     indx_t = zeros(Int, T) 
@@ -115,11 +130,13 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
     w_last_z = zeros(Int, W)
     t_new = 0 
     ztotmin = 0
+    ztot_end = zeros(Int,W)
+    div = 0.0
 
     for g = 1:iter 
 
         for d in 1:D
-            words = train_corpus[d] 
+            words = corpus_train[d] 
 
             for iv in eachindex(words) 
                 (w, Ndw) = words[iv]
@@ -127,9 +144,9 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
 
                 for i in 1:Ndw  
                     t_old = ts[i]  
-                    subtract(F, d, w, t_old) 
+                    
+                    subtract(F, d, w, t_old)
 
-                    # MCMCM
                     if g == 1  
                         if iv == 1 && i == 1 
                             indx_t .= sortperm(F.Nt, rev = true)    
@@ -138,7 +155,7 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                         end 
 
                         ztotmin = F.Nt[indx_t[T]] 
-                        fac = 1.0 / (ztotmin + W * F.beta)
+                        div = 1.0 / (ztotmin + W * F.beta)
 
                         if iv == length(words) && i == Ndw 
                             indx_dt[d, :] .= sortperm(F.Ndt[d, :], rev = true) 
@@ -146,7 +163,7 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                         
                         for t in 1:T
                             Ad[t] = (F.Ndt[d, t] + F.alpha[t])
-                            Bw[t] = (F.Ntw[t, w] + F.beta)  
+                            Bw[t] = (F.Ntw[t, w] + F.beta) / (ztotmin + W*F.beta)
                         end 
                         a[d] = Ad' * Ad   
                         b[w] = (Bw' * Bw) 
@@ -172,27 +189,17 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                         if t_new != t_old 
                             sort_update(T, F.Nt, indx_t, t_new, t_old)
                             ztotmin = F.Nt[indx_t[T]] 
+                            div = 1.0 / (ztotmin + W * F.beta)
                         end 
+
+                        b[w] *= (ztot_end[w] + W*F.beta)^2
                         
-                        fac = 1.0 / (ztotmin + W * F.beta) 
+                        update_norms(F, a, b, d, w, t_new, t_old, d_old, w_old, indx_dt)
 
-                        if d_old != t_old 
-                            a[d] -= (F.alpha[d_old] + F.Ndt[d, d_old] - 1)^2; 
-                            a[d] -= (F.alpha[t_old] + F.Ndt[d, t_old] + 1)^2 ;
-                            a[d] += (F.alpha[d_old] + F.Ndt[d, d_old])^2
-                            a[d] += (F.alpha[t_old] + F.Ndt[d, t_old])^2
-
-                            sort_update(T, F.Ndt[d, :], indx_dt[d, :], d_old, t_new)
-                        end 
                         aa = a[d]
+                        bb = b[w]
 
-                        if w_old != t_old 
-                            b[w] -= (F.beta + F.Ntw[w_old, w] - 1)^2
-                            b[w] -= (F.beta + F.Ntw[t_old, w] + 1)^2
-                            b[w] += (F.beta + F.Ntw[w_old, w])^2
-                            b[w] += (F.beta + F.Ntw[t_old, w])^2
-                        end 
-                        bb = b[w] 
+                        b[w] *= div^2
                         
                         U = rand()  
                         indx = indx_dt[d, :]
@@ -214,7 +221,7 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                             bb = max(0.0, bb)
 
                             Zp_old = Z  
-                            Z = probs[t] + sqrt(aa * bb) * fac  
+                            Z = probs[t] + sqrt(aa * bb) * div  
 
                             if probs[t] < U * Z 
                                 continue 
@@ -229,7 +236,6 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                                         break 
                                     end 
                                 end 
-                                break
                             end
                         end
                     end 
@@ -237,15 +243,15 @@ function FAST_GIBBS(F::PTM, train_corpus, test_corpus, burnin, sample )
                     increase(F, d, w, t_new)  
         
                     d_last_z[d] = t_new    
-                    w_last_z[w] = t_new   
-                    F.z[d][iv][i] = t_new  
+                    w_last_z[w] = t_new
+                    ztot_end[w] = ztotmin
 
+                    F.z[d][iv][i] = t_new  
                 end
             end 
         end
 
-        update_and_sample(F, g, burnin, test_corpus)
-
+        update_and_sample(F, g, burnin, corpus_test)
     end 
 end
 
@@ -274,14 +280,14 @@ function prior_update(F::PTM)
     F.beta = F.beta * (beta_num - T * W * digamma(F.beta)) / (W * beta_den - T * W * digamma(F.beta * W))
 end
 
-function PERPL(F::PTM, corpus_test)
+function PPLEX(F::PTM, corpus_test)
     W = F.W
    
     alpha_sum = sum(F.alpha)
     N = sum(F.Nd)
     L = 0.0 
     
-    if F.SP == 1
+    if F.I == 1  
         F.pdw = Vector{Vector{Float64}}()
         F.pdw = [rand(Float64, length(words)) for words in corpus_test]
     end
@@ -289,46 +295,46 @@ function PERPL(F::PTM, corpus_test)
     for (d, words) in enumerate(corpus_test)
         
         for (iw, (w, Ndw)) in enumerate(words)
-            F.pdw[d][iw] *= (F.SP - 1.0) / F.SP
+            F.pdw[d][iw] *= (F.I - 1.0) / F.I  
     
             phi_tw = (F.Ntw[:, w] .+ F.beta) / (F.Nt .+ F.beta * W)
             theta_dw = (F.Ndt[d, :] .+ F.alpha) / (F.Nd[d] + alpha_sum)
     
-            F.pdw[d][iw] += sum(phi_tw .* theta_dw) / F.SP
+            F.pdw[d][iw] += sum(phi_tw .* theta_dw) / F.I  
             L += Ndw * log(F.pdw[d][iw])
         end
     end
 
-    F.PERP = exp(-L / N)
+    F.PX = exp(-L / N)  
 end
 
 function sample_Ntw(F::PTM)
     T, W = F.T, F.W
 
-    if F.SP == 1
+    if F.I == 1  
         F.Ntw_avg = zeros(T, W)
     end
     
-    F.Ntw_avg .= 1.0 / F.SP .* F.Ntw .+ (F.SP - 1) / F.SP .* F.Ntw_avg
+    F.Ntw_avg .= 1.0 / F.I .* F.Ntw .+ (F.I - 1) / F.I .* F.Ntw_avg  
 end
 
 function sample_Ndt(F::PTM)
     D, T = F.D, F.T
 
-    if F.SP == 1
+    if F.I == 1  
         F.Ndt_avg = zeros(D, T)
     end
     
-    F.Ndt_avg .= 1.0 / F.SP .* F.Ndt .+ (F.SP - 1) / F.SP .* F.Ndt_avg
+    F.Ndt_avg .= 1.0 / F.I .* F.Ndt .+ (F.I - 1) / F.I .* F.Ndt_avg  
 end
 
-function update_and_sample(F::PTM, g, burnin, test_corpus)
+function update_and_sample(F::PTM, g, burnin, corpus_test)
 
     prior_update(F)
     F.Trace[:, :, g] = F.Ndt
 
     if g <= burnin
-        println("iter=", g)
+        println("Iter = ", g)
     end
 
     if g == burnin + 1
@@ -336,11 +342,11 @@ function update_and_sample(F::PTM, g, burnin, test_corpus)
     end
 
     if g > burnin
-        F.SP += 1
-        PERPL(F, test_corpus)
+        F.I += 1
+        PPLEX(F, corpus_test)
         sample_Ndt(F)
         sample_Ntw(F)
-        println("iter=", g, ", PERP=", F.PERP)
+        println("Iter = ", g, ", Perplexity = ", F.PX)
     end
 end
 
@@ -349,8 +355,8 @@ function Run_FAST(F::PTM, corpus_train, corpus_test, burnin = 100, sample = 50)
     init_alpha(F, rand(F.T)) 
     init_beta(F, rand())  
     init_vars(F, corpus_train) 
-    F.PERP = 1000.0
-    F.SP = 0
+    F.PX = 1000.0
+    F.I = 0
     F.Trace = zeros(Int, F.D, F.T, (burnin + sample))
     FAST_GIBBS(F, corpus_train, corpus_test, burnin, sample)
 end
