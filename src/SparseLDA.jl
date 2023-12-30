@@ -158,7 +158,6 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                         q += S.Ntw[t, w] * c[t]   
                     end
                     
-                    #COLLAPSED GIBBS 
                     zsum = rand() * (s + r + q)  
                     t_new = 0 
                     
