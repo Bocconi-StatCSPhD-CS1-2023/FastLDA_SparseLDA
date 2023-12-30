@@ -285,7 +285,7 @@ function PPLEX(F::PTM, corpus_test)
    
     alpha_sum = sum(F.alpha)
     N = sum(F.Nd)
-    L = 0.0 
+    LL = 0.0 
     
     if F.I == 1  
         F.pdw = Vector{Vector{Float64}}()
@@ -301,11 +301,11 @@ function PPLEX(F::PTM, corpus_test)
             theta_dw = (F.Ndt[d, :] .+ F.alpha) / (F.Nd[d] + alpha_sum)
     
             F.pdw[d][iw] += sum(phi_tw .* theta_dw) / F.I  
-            L += Ndw * log(F.pdw[d][iw])
+            LL += Ndw * log(F.pdw[d][iw])
         end
     end
 
-    F.PX = exp(-L / N)  
+    F.PX = exp(-Ll / N)  
 end
 
 function sample_Ntw(F::PTM)
