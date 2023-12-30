@@ -12,8 +12,6 @@ mutable struct PTM
     Nd::Vector{Int64}
     Ntw_avg::Matrix{Float64}
     Ndt_avg::Matrix{Float64}
-    posNdt::Vector{Vector{Int64}}
-    posNtw::Vector{Vector{Int64}}
     z::Vector{Vector{Vector{Int64}}}
     alpha::Vector{Float64}
     beta::Float64
@@ -48,9 +46,6 @@ function init_vars(S::PTM, corpus_train)
     S.Ndt = zeros(D, T)
     S.Nd = zeros(D)   
     S.z = Vector{Vector{Int64}}(undef, D)
-    S.posNdt = Vector{Vector{Int64}}[]
-    S.posNtw = Vector{Vector{Int64}}[]
-
 
     for d in 1:D
         corpus_d = corpus_train[d]
@@ -70,9 +65,6 @@ function init_vars(S::PTM, corpus_train)
             end
         end
     end
-
-    S.posNdt = [findall(x -> x != 0, S.Ndt[d, :]) for d in 1:D]
-    S.posNtw = [findall(x -> x != 0, S.Ntw[:, w]) for w in 1:W]
 end
 
 function subtract(S::PTM, d::Int64, w::Int64, t_old::Int64)
@@ -120,7 +112,10 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
     D = S.D
     W = S.W
     iter = burnin + sample 
-    c = zeros(Float64, T)
+    c = zeros(T)
+    
+    posNdt = [findall(x -> x != 0, S.Ndt[d, :]) for d in 1:D]
+    posNtw = [findall(x -> x != 0, S.Ntw[:, w]) for w in 1:W]
 
     for g in 1:iter 
 
@@ -133,7 +128,7 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
         for d in 1:D
 
             S.r = 0.0
-            for t in S.posNdt[d]    
+            for t in posNdt[d]    
                 S.r += S.beta*S.Ndt[d,t] / (S.beta*W + S.Nt[t])  
                 c[t] = (S.alpha[t] + S.Ndt[d,t]) / (S.beta*W + S.Nt[t]) 
             end
@@ -152,14 +147,14 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                     s = S.s
                     
                     if S.Ndt[d, t_old] == 0    
-                        filter!(e->e!=t_old, S.posNdt[d])  
+                        filter!(e->e!=t_old, posNdt[d])  
                     end
                     if S.Ntw[t_old, w] == 0
-                        filter!(e->e!=t_old, S.posNtw[w])   
+                        filter!(e->e!=t_old, posNtw[w])   
                     end
                     
                     q = 0.0 
-                    for t in S.posNtw[w]   
+                    for t in posNtw[w]   
                         q += S.Ntw[t, w] * c[t]   
                     end
                     
@@ -170,7 +165,7 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                     if zsum < q        
                         l = 1
                         while zsum > 0
-                            t_new = S.posNtw[w][l]
+                            t_new = posNtw[w][l]
                             zsum -= S.Ntw[t_new, w] * c[t_new] 
                             l += 1
                         end
@@ -179,7 +174,7 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                         l = 1
                         zsum = zsum - q            
                         while zsum > 0 
-                            t_new = S.posNdt[d][l]      
+                            t_new = posNdt[d][l]      
                             zsum -= S.beta*S.Ndt[d, t_new] / (S.beta*W + S.Nt[t_new])   
                             l += 1
                         end
@@ -199,16 +194,16 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                     second_update(S, d, w, t_new, c)   
                     
                     if S.Ndt[d, t_new] == 1
-                        push!(S.posNdt[d], t_new)
+                        push!(posNdt[d], t_new)
                     end
                     if S.Ntw[t_new, w] == 1
-                        push!(S.posNtw[w], t_new)
+                        push!(posNtw[w], t_new)
                     end
 
                     S.z[d][iv][i] = t_new  
                 end
             end 
-            for t in S.posNdt[d]
+            for t in posNdt[d]
                 c[t] = S.alpha[t] / (S.beta*W + S.Nt[t])
             end
         end
@@ -246,7 +241,7 @@ function PPLEX(S::PTM, corpus_test)
     
     alpha_sum = sum(S.alpha)
     N = sum(S.Nd)
-    L = 0.0 
+    LL = 0.0 
     
     if S.I == 1
         S.pdw = Vector{Vector{Float64}}()
@@ -257,16 +252,16 @@ function PPLEX(S::PTM, corpus_test)
 
         for (iw, (w, Ndw)) in enumerate(words)
 
-            S.pdw[d][iw] *= (S.I-1.0)/S.I 
+            S.pdw[d][iw] *= (S.I - 1.0)/S.I 
 
             phi_tw = (S.Ntw[:, w] .+ S.beta) / (S.Nt .+ S.beta * W)
             theta_dt = (S.Ndt[d,:] .+ S.alpha) / (S.Nd[d] + alpha_sum)
             
             S.pdw[d][iw] += sum(phi_tw .* theta_dt) /S.I
-            L += Ndw * log(S.pdw[d][iw])
+            LL += Ndw * log(S.pdw[d][iw])
         end
     end
-    S.PX = exp(-L/N)
+    S.PX = exp(-LL / N)
 end
 
 function sample_Ntw(S::PTM)
