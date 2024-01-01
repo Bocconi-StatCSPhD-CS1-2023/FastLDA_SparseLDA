@@ -27,12 +27,10 @@ end
 
 function init_alpha(S::PTM, alpha)
     S.alpha = alpha
-    return
 end
 
 function init_beta(S::PTM, beta)
     S.beta = beta
-    return
 end
 
 function init_vars(S::PTM, corpus_train)
@@ -230,8 +228,10 @@ function prior_update(S::PTM)
             alpha_num += digamma(S.Ndt[d,t]+S.alpha[t])
             alpha_den += digamma(sum(S.Ndt[d,:])+alpha_sum)
         end
+
         S.alpha[t] = S.alpha[t]*(alpha_num - D*digamma(S.alpha[t]))/(alpha_den - D*digamma(alpha_sum))
     end
+
     S.beta = S.beta*(beta_num - T*W*digamma(S.beta))/(W*beta_den - T*W*digamma(S.beta*W))
 end
 
@@ -260,6 +260,7 @@ function PPLEX(S::PTM, corpus_test)
             LL += Ndw * log(S.pdw[d][iw])
         end
     end
+    
     S.PX = exp(-LL / N)
 end
 
