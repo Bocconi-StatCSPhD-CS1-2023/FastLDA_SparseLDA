@@ -46,14 +46,14 @@ T = 4
 voc_size = length(vocabulary)
 W = voc_size
 
-burnin = 10
-sample = 10
+burnin = 10 
+sample = 40
 
 S = SPARSE_LDA.PTM(T, W)
 SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 
-F = FAST_LDA.PTM(T, W)
-FAST_LDA.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
+F = FAST_LDA_22.PTM(T, W)
+FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 
-H = FAST_LDA_HD.PTM(T, W)
-FAST_LDA_HD.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
+H = FAST_LDA_333.PTM(T, W)
+FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
