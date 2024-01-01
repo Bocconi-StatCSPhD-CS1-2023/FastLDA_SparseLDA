@@ -1,4 +1,4 @@
-module FAST_LDA
+module FAST_LDA_22
 
 using SpecialFunctions
 
@@ -118,20 +118,19 @@ end
 function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
     D, T, W = F.D, F.T, F.W
     iter = burnin + sample 
-    indx_t = zeros(Int, T) 
+    indx_t = zeros(Int,T) 
     indx_dt = zeros(Int, D, T)   
-    Ad = zeros(Float64, T)   
-    Bw = zeros(Float64, T)
-    probs = zeros(Float64, T) 
-    b = zeros(Float64, W) 
-    a = zeros(Float64, D)
+    Ad = zeros(T)   
+    Bw = zeros(T)
+    pbs = zeros(T) 
+    b = zeros(W) 
+    a = zeros(D)
     Z = 0.0 
-    d_last_z = zeros(Int, D)  
-    w_last_z = zeros(Int, W)
+    d_last = zeros(Int, D)  
+    w_last = zeros(Int, W)
     t_new = 0 
-    ztotmin = 0
-    ztot_end = zeros(Int,W)
-    div = 0.0
+    totmin = 0
+    cc = 0.0
 
     for g = 1:iter 
 
@@ -154,8 +153,8 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
                             sort_update(T, F.Nt, indx_t, t_new, t_old)
                         end 
 
-                        ztotmin = F.Nt[indx_t[T]] 
-                        div = 1.0 / (ztotmin + W * F.beta)
+                        totmin = F.Nt[indx_t[T]] 
+                        cc = 1.0 / (totmin + W * F.beta)
 
                         if iv == length(words) && i == Ndw 
                             indx_dt[d, :] .= sortperm(F.Ndt[d, :], rev = true) 
@@ -163,43 +162,39 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
                         
                         for t in 1:T
                             Ad[t] = (F.Ndt[d, t] + F.alpha[t])
-                            Bw[t] = (F.Ntw[t, w] + F.beta) / (ztotmin + W*F.beta)
+                            Bw[t] = (F.Ntw[t, w] + F.beta) 
                         end 
                         a[d] = Ad' * Ad   
                         b[w] = (Bw' * Bw) 
                         
                         for t in 1:T 
-                            probs[t] = (F.Ndt[d, t] + F.alpha[t]) * (F.Ntw[t, w] + F.beta) / (F.Nt[t] + W * F.beta)
+                            pbs[t] = (F.Ndt[d, t] + F.alpha[t]) * (F.Ntw[t, w] + F.beta) / (F.Nt[t] + W * F.beta)
                         end 
 
-                        Z = sum(probs)
+                        Z = sum(pbs)
                         U = Z * rand()  
-                        currprob = probs[1]
+                        currprob = pbs[1]
                         t_new = 1
 
                         while U > currprob 
                             t_new += 1 
-                            currprob += probs[t_new]
+                            currprob += pbs[t_new]
                         end
 
                     else 
-                        d_old = d_last_z[d]  
-                        w_old = w_last_z[w] 
+                        d_old = d_last[d]  
+                        w_old = w_last[w] 
     
                         if t_new != t_old 
                             sort_update(T, F.Nt, indx_t, t_new, t_old)
-                            ztotmin = F.Nt[indx_t[T]] 
-                            div = 1.0 / (ztotmin + W * F.beta)
+                            totmin = F.Nt[indx_t[T]] 
+                            cc = 1.0 / (totmin + W * F.beta)
                         end 
-
-                        b[w] *= (ztot_end[w] + W*F.beta)^2
                         
                         update_norms(F, a, b, d, w, t_new, t_old, d_old, w_old, indx_dt)
 
                         aa = a[d]
                         bb = b[w]
-
-                        b[w] *= div^2
                         
                         U = rand()  
                         indx = indx_dt[d, :]
@@ -208,12 +203,12 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
                             q = indx[t] 
 
                             if t != 1 
-                                probs[t] = probs[t - 1]
+                                pbs[t] = pbs[t - 1]
                             else  
-                                probs[t] = 0.0
+                                pbs[t] = 0.0
                             end 
 
-                            probs[t] += (F.Ndt[d, q] + F.alpha[q]) * (F.Ntw[q, w] + F.beta) / (F.Nt[q] + W * F.beta) # Z0
+                            pbs[t] += (F.Ndt[d, q] + F.alpha[q]) * (F.Ntw[q, w] + F.beta) / (F.Nt[q] + W * F.beta) 
                             aa -= (F.alpha[q] + F.Ndt[d, q])^2  
                             bb -= (F.beta + F.Ntw[q, w])^2 
 
@@ -221,17 +216,17 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
                             bb = max(0.0, bb)
 
                             Zp_old = Z  
-                            Z = probs[t] + sqrt(aa * bb) * div  
+                            Z = pbs[t] + sqrt(aa * bb) * cc  
 
-                            if probs[t] < U * Z 
+                            if pbs[t] < U * Z 
                                 continue 
-                            elseif t == 1 || U * Z > probs[t - 1]
+                            elseif t == 1 || U * Z > pbs[t - 1]
                                 t_new = indx[t]
                                 break 
                             else 
-                                U = (U * Zp_old - probs[t - 1]) * Z / (Zp_old - Z) 
+                                U = (U * Zp_old - pbs[t - 1]) * Z / (Zp_old - Z) 
                                 for j in 1:t 
-                                    if probs[j] >= U 
+                                    if pbs[j] >= U 
                                         t_new = indx[j]
                                         break 
                                     end 
@@ -242,9 +237,8 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
                     
                     increase(F, d, w, t_new)  
         
-                    d_last_z[d] = t_new    
-                    w_last_z[w] = t_new
-                    ztot_end[w] = ztotmin
+                    d_last[d] = t_new    
+                    w_last[w] = t_new
 
                     F.z[d][iv][i] = t_new  
                 end
@@ -305,7 +299,7 @@ function PPLEX(F::PTM, corpus_test)
         end
     end
 
-    F.PX = exp(-Ll / N)  
+    F.PX = exp(-LL / N)  
 end
 
 function sample_Ntw(F::PTM)
