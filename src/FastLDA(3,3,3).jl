@@ -10,30 +10,26 @@ mutable struct PTM
     Ntw::Matrix{Int64}   
     Ndt::Matrix{Int64}  
     Nd::Vector{Int64}
+    Ntw_avg::Matrix{Float64}   
+    Ndt_avg::Matrix{Float64} 
     z::Vector{Vector{Vector{Int64}}}
     alpha::Vector{Float64}
     beta::Float64
     I::Int64    
     c::Float64
     PX::Float64  
-    pdw::Vector{Vector{Float64}}
-    Ntw_avg::Matrix{Float64}   
-    Ndt_avg::Matrix{Float64}  
+    pdw::Vector{Vector{Float64}} 
     Trace::Array{Int64, 3}
     PTM(T, W) = new(T, W)
 end
 
-function init_alpha(F::PTM, alpha)
-    F.alpha = alpha 
-end
-
-function init_beta(F::PTM, beta)
-    F.beta = beta
-end
-
-function init_vars(F::PTM, corpus_train) 
+function init_vars(F::PTM, corpus_train, alpha::Vector{Float64}, beta::Float64) 
     F.D = length(corpus_train)
+
     D, T, W = F.D, F.T, F.W
+
+    F.alpha = alpha 
+    F.beta = beta 
     F.Nt = zeros(T)
     F.Ntw = zeros(T, W)
     F.Ndt = zeros(D, T)  
@@ -96,15 +92,15 @@ function update_norms(F::PTM, a::Vector{Float64}, b::Vector{Float64}, d::Int64, 
     W = F.W
     
     if t_new != t_old 
-        F.c -= (1.0/(W*F.beta + F.Nt[t_old]-1))^3
-        F.c -= (1.0/(W*F.beta + F.Nt[t_new]+1))^3
-        F.c += (1.0/(W*F.beta + F.Nt[t_old]))^3
-        F.c += (1.0/(W*F.beta + F.Nt[t_new]))^3                           
+        F.c -= (1.0/(W*F.beta + F.Nt[t_new] -1))^3
+        F.c -= (1.0/(W*F.beta + F.Nt[t_old] +1))^3
+        F.c += (1.0/(W*F.beta + F.Nt[t_new]))^3
+        F.c += (1.0/(W*F.beta + F.Nt[t_old]))^3                           
     end 
 
     if d_old != t_old 
-        a[d] -= (F.alpha[d_old] + F.Ndt[d, d_old] - 1)^3; 
-        a[d] -= (F.alpha[t_old] + F.Ndt[d, t_old] + 1)^3 ;
+        a[d] -= (F.alpha[d_old] + F.Ndt[d, d_old] -1)^3; 
+        a[d] -= (F.alpha[t_old] + F.Ndt[d, t_old] +1)^3 ;
         a[d] += (F.alpha[d_old] + F.Ndt[d, d_old])^3
         a[d] += (F.alpha[t_old] + F.Ndt[d, t_old])^3
 
@@ -112,8 +108,8 @@ function update_norms(F::PTM, a::Vector{Float64}, b::Vector{Float64}, d::Int64, 
     end 
 
     if w_old != t_old 
-        b[w] -= (F.beta + F.Ntw[w_old, w] - 1)^3
-        b[w] -= (F.beta + F.Ntw[t_old, w] + 1)^3
+        b[w] -= (F.beta + F.Ntw[w_old, w] -1)^3
+        b[w] -= (F.beta + F.Ntw[t_old, w] +1)^3
         b[w] += (F.beta + F.Ntw[w_old, w])^3
         b[w] += (F.beta + F.Ntw[t_old, w])^3
     end 
@@ -210,7 +206,6 @@ function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample )
                             aa -= (F.alpha[q] + F.Ndt[d, q])^3  
                             bb -= (F.beta + F.Ntw[q, w])^3 
                             cc -= (1.0/(W*F.beta  + F.Nt[q]))^3
-
                             aa = max(0.0, aa)
                             bb = max(0.0, bb)
                             cc = max(0.0, cc)
@@ -301,24 +296,16 @@ function PPLEX(F::PTM, corpus_test)
     F.PX = exp(-LL / N)  
 end
 
-function sample_Ntw(F::PTM)
-    T, W = F.T, F.W
-
-    if F.I == 1  
-        F.Ntw_avg = zeros(T, W)
+function sampling(S::PTM)
+    T, W, D = S.T, S.W, S.D
+    
+    if S.I == 1
+        S.Ntw_avg = zeros(T, W)
+        S.Ndt_avg = zeros(D, T)  
     end
     
-    F.Ntw_avg .= 1.0 / F.I .* F.Ntw .+ (F.I - 1) / F.I .* F.Ntw_avg  
-end
-
-function sample_Ndt(F::PTM)
-    D, T = F.D, F.T
-
-    if F.I == 1  
-        F.Ndt_avg = zeros(D, T)
-    end
-    
-    F.Ndt_avg .= 1.0 / F.I .* F.Ndt .+ (F.I - 1) / F.I .* F.Ndt_avg  
+    S.Ntw_avg .= 1.0 / S.I .* S.Ntw .+ (S.I - 1) / S.I .* S.Ntw_avg
+    S.Ndt_avg .= 1.0 / S.I .* S.Ndt .+ (S.I - 1) / S.I .* S.Ndt_avg
 end
 
 function update_and_sample(F, g, burnin, corpus_test)
@@ -337,21 +324,17 @@ function update_and_sample(F, g, burnin, corpus_test)
     if g > burnin
         F.I += 1  
         PPLEX(F, corpus_test)
-        sample_Ndt(F)
-        sample_Ntw(F)
+        sampling(F)
         println("Iter = ", g, ", Perplexity = ", F.PX)  
     end
 end
 
 function Run_FAST(F::PTM, corpus_train, corpus_test, burnin = 100, sample = 50)
-    
-    init_alpha(F, rand(F.T)) 
-    init_beta(F, rand())  
-    init_vars(F, corpus_train) 
+
+    init_vars(F, corpus_train, rand(F.T), rand()) 
     F.PX = 1000.0
     F.I = 0
     F.Trace = zeros(Int, F.D, F.T, (burnin + sample))
     FAST_GIBBS(F, corpus_train, corpus_test, burnin, sample)
 end
 end
-
