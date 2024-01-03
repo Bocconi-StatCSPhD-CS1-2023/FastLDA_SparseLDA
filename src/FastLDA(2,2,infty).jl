@@ -22,7 +22,7 @@ mutable struct PTM
     PTM(T, W) = new(T, W)
 end
 
-function init_vars(F::PTM, corpus_train, alpha::Vector{Float64}, beta::Float64) 
+function init_vars(F::PTM, corpus_train::Vector{Any}, alpha::Vector{Float64}, beta::Float64) 
     F.D = length(corpus_train)
 
     D, T, W = F.D, F.T, F.W
@@ -111,7 +111,7 @@ function increase(F::PTM, d::Int64, w::Int64, t_new::Int64)
     F.Ntw[t_new, w] += 1
 end
 
-function FAST_GIBBS(F::PTM, corpus_train, corpus_test, burnin, sample)
+function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin::Int64, sample::Int64)
     D, T, W = F.D, F.T, F.W
     iter = burnin + sample 
     indx_t = zeros(Int,T) 
@@ -269,7 +269,7 @@ function prior_update(F::PTM)
     F.beta = F.beta * (beta_num - T * W * digamma(F.beta)) / (W * beta_den - T * W * digamma(F.beta * W))
 end
 
-function PPLEX(F::PTM, corpus_test)
+function PPLEX(F::PTM, corpus_test::Vector{Any})
     W = F.W
    
     alpha_sum = sum(F.alpha)
@@ -297,19 +297,19 @@ function PPLEX(F::PTM, corpus_test)
     F.PX = exp(-LL / N)  
 end
 
-function sampling(S::PTM)
-    T, W, D = S.T, S.W, S.D
+function sampling(F::PTM)
+    T, W, D = F.T, F.W, F.D
     
-    if S.I == 1
-        S.Ntw_avg = zeros(T, W)
-        S.Ndt_avg = zeros(D, T)  
+    if F.I == 1
+        F.Ntw_avg = zeros(T, W)
+        F.Ndt_avg = zeros(D, T)  
     end
     
-    S.Ntw_avg .= 1.0 / S.I .* S.Ntw .+ (S.I - 1) / S.I .* S.Ntw_avg
-    S.Ndt_avg .= 1.0 / S.I .* S.Ndt .+ (S.I - 1) / S.I .* S.Ndt_avg
+    F.Ntw_avg .= 1.0 / F.I .* F.Ntw .+ (F.I - 1) / F.I .* F.Ntw_avg
+    F.Ndt_avg .= 1.0 / F.I .* F.Ndt .+ (F.I - 1) / F.I .* F.Ndt_avg
 end
 
-function update_and_sample(F::PTM, g, burnin, corpus_test)
+function update_and_sample(F::PTM, g::Int64, burnin::Int64, corpus_test::Vector{Any})
 
     prior_update(F)
     F.Trace[:, :, g] = F.Ndt
@@ -330,7 +330,7 @@ function update_and_sample(F::PTM, g, burnin, corpus_test)
     end
 end
 
-function Run_FAST(F::PTM, corpus_train, corpus_test, burnin = 100, sample = 50)
+function Run_FAST(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin = 100, sample = 50)
     
     init_vars(F, corpus_train,rand(F.T),rand()) 
     F.PX = 1000.0
@@ -339,4 +339,3 @@ function Run_FAST(F::PTM, corpus_train, corpus_test, burnin = 100, sample = 50)
     FAST_GIBBS(F, corpus_train, corpus_test, burnin, sample)
 end
 end
-
