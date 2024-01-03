@@ -17,6 +17,7 @@ mutable struct PTM
     beta::Float64
     s::Float64
     r::Float64
+    f::Vector{Float64}
     I::Int64  
     PX::Float64  
     pdw::Vector{Vector{Float64}}
@@ -25,14 +26,14 @@ mutable struct PTM
     PTM(T, W) = new(T, W)
 end
 
-function init_vars(S::PTM, corpus_train, alpha::Vector{Float64}, beta::Float64)
+function init_vars(S::PTM, corpus_train::Vector{Any}, alpha::Vector{Float64}, beta::Float64)
     S.D, = size(corpus_train)
-
     T, D, W = S.T, S.D, S.W
 
     S.alpha = alpha 
     S.beta = beta 
     S.r = 0.0
+    S.f = zeros(T)
     S.Nt = zeros(T)
     S.Ntw = zeros(T, W)
     S.Ndt = zeros(D, T)
@@ -59,66 +60,85 @@ function init_vars(S::PTM, corpus_train, alpha::Vector{Float64}, beta::Float64)
     end
 end
 
-function first_update(S::PTM, d::Int64, w::Int64, t_old::Int64, div::Vector{Float64})
-    W = S.W
-
+function subtract(S::PTM, d::Int64, w::Int64, t_old::Int64)
     S.Nt[t_old] -= 1      
     S.Ndt[d, t_old] -= 1  
     S.Ntw[t_old, w] -= 1 
-
-    S.r -= S.beta*(S.Ndt[d, t_old]+1)/(S.beta*W + S.Nt[t_old]+1)
-    S.r += S.beta*S.Ndt[d, t_old]/(S.beta*W + S.Nt[t_old])
-
-    div[t_old] = (S.alpha[t_old] + S.Ndt[d, t_old])/(S.beta*W + S.Nt[t_old])
 end
 
-function second_update(S::PTM, d::Int64, w::Int64, t_new::Int64, div::Vector{Float64})  
-    W = S.W 
+function update_buckets(S::PTM, d::Int64, last_d::Int64, iv::Int64, i::Int64, t_old::Int64, t_new::Int64)
+    W = S.W
 
+    if d==1 && iv == 1 && i ==1
+        S.s -= S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old] +1)
+        S.s += S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old])
+
+    elseif t_new != t_old 
+        S.s -= S.alpha[t_new] * S.beta / (S.beta*W + S.Nt[t_new]-1) 
+        S.s -= S.alpha[t_old] * S.beta / (S.beta*W + S.Nt[t_old]+1)
+        S.s += S.alpha[t_new] * S.beta / (S.beta*W + S.Nt[t_new])
+        S.s += S.alpha[t_old] * S.beta / (S.beta*W + S.Nt[t_old]) 
+    end 
+
+    if last_d != d 
+        S.r -= S.beta*(S.Ndt[d, t_old]+1) / (S.beta*W + S.Nt[t_old]+1)
+        S.r += S.beta*S.Ndt[d, t_old] / (S.beta*W + S.Nt[t_old])
+
+    elseif t_new != t_old 
+        S.r -= S.beta*(S.Ndt[d, t_new]-1) / (S.beta*W + S.Nt[t_new]-1)
+        S.r -= S.beta*(S.Ndt[d, t_old]+1) / (S.beta*W + S.Nt[t_old]+1)
+        S.r += S.beta*S.Ndt[d, t_new] / (S.beta*W + S.Nt[t_new])
+        S.r += S.beta*S.Ndt[d, t_old] / (S.beta*W + S.Nt[t_old])
+    end 
+end 
+
+function update_pos_f(S::PTM, posNdt::Vector{Vector{Int64}}, posNtw::Vector{Vector{Int64}}, 
+    d::Int64, w::Int64, t_old::Int64, t_new::Int64, step::Int64)
+    W = S.W
+
+    if step == 0 
+        S.Ndt[d, t_old] == 0 && filter!(e->e!=t_old, posNdt[d]) 
+        S.Ntw[t_old, w] == 0 && filter!(e->e!=t_old, posNtw[w]) 
+        
+        S.f[t_old] = (S.alpha[t_old] + S.Ndt[d, t_old])/(S.beta*W + S.Nt[t_old])
+    else
+        S.Ndt[d, t_new] == 1 && push!(posNdt[d], t_new)
+        S.Ntw[t_new, w] == 1 && push!(posNtw[w], t_new)
+
+        S.f[t_new] = (S.alpha[t_new] + S.Ndt[d, t_new])/(S.beta*W + S.Nt[t_new]) 
+    end
+end
+
+function increase(S::PTM, d::Int64, w::Int64, t_new::Int64)  
     S.Nt[t_new] += 1
     S.Ndt[d, t_new] += 1  
     S.Ntw[t_new, w] += 1
-
-    S.r -= S.beta*(S.Ndt[d, t_new]-1)/(S.beta*W + S.Nt[t_new]-1)
-    S.r += S.beta*(S.Ndt[d, t_new])/(S.beta*W + S.Nt[t_new])
-
-    div[t_new] = (S.alpha[t_new] + S.Ndt[d, t_new])/(S.beta*W + S.Nt[t_new])  
 end
 
-function update_smoothing(S::PTM, t_old::Int64, t_new::Int64)
-    W = S.W
-
-    S.s -= S.alpha[t_new] * S.beta / (S.beta*W + S.Nt[t_new]-1) 
-    S.s -= S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old]+1)
-    S.s += S.alpha[t_new]* S.beta / (S.beta*W + S.Nt[t_new])
-    S.s += S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old])
-end 
-
-
-function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
+function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin::Int64, sample::Int64)
     T = S.T
     D = S.D
     W = S.W
     iter = burnin + sample 
-    div = zeros(T)
     t_new = 0 
+    last_d = 0
 
-    posNdt = [findall(x -> x != 0, S.Ndt[d, :]) for d in 1:D]
-    posNtw = [findall(x -> x != 0, S.Ntw[:, w]) for w in 1:W]
+    posNdt = [findall(e -> e != 0, S.Ndt[d, :]) for d in 1:D]
+    posNtw = [findall(e -> e != 0, S.Ntw[:, w]) for w in 1:W]
 
     for g in 1:iter 
 
         S.s = 0.0
         for t in 1:T
             S.s += S.alpha[t] * S.beta / (S.beta*W + S.Nt[t])  
-            div[t] = S.alpha[t] / (S.beta*W + S.Nt[t])
+            S.f[t] = S.alpha[t] / (S.beta*W + S.Nt[t])
         end
 
         for d in 1:D
             S.r = 0.0
             for t in posNdt[d]    
                 S.r += S.beta*S.Ndt[d,t] / (S.beta*W + S.Nt[t]) 
-                div[t] = (S.alpha[t] + S.Ndt[d,t]) / (S.beta*W + S.Nt[t]) 
+                S.f[t] = (S.alpha[t] + S.Ndt[d,t]) / (S.beta*W + S.Nt[t]) 
             end
 
             words = corpus_train[d] 
@@ -129,27 +149,19 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                  
                 for i in 1:Rep 
                     t_old = ts[i] 
-                    first_update(S, d, w, t_old, div) 
-                    
-                    if S.Ndt[d, t_old] == 0    
-                        filter!(e->e!=t_old, posNdt[d])  
-                    end
-                    if S.Ntw[t_old, w] == 0
-                        filter!(e->e!=t_old, posNtw[w])   
-                    end
+                    step = 0 
 
-                    if d==1 && iv == 1 && i ==1
-                        S.s -= S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old] +1)
-                        S.s += S.alpha[t_old]* S.beta / (S.beta*W + S.Nt[t_old])
-                    elseif t_new != t_old 
-                        update_smoothing(S::PTM, t_old, t_new)
-                    end 
+                    subtract(S, d, w, t_old) 
                     
+                    update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
+                    update_buckets(S, d, last_d, iv, i, t_old, t_new)
+
                     s = S.s
                     r = S.r 
                     q = 0.0 
+                    
                     for t in posNtw[w]   
-                        q += S.Ntw[t, w] * div[t]   
+                        q += S.Ntw[t, w] * S.f[t]   
                     end
                     
                     Z = (s + r + q)
@@ -177,21 +189,17 @@ function SPARSE_GIBBS(S::PTM, corpus_train, corpus_test, burnin, sample)
                         l = 1
                         while U <= Z
                             t_new = posNtw[w][l]
-                            U += S.Ntw[t_new, w] * div[t_new] 
+                            U += S.Ntw[t_new, w] * S.f[t_new] 
                             l += 1
                         end
                     end 
-                    
-                    second_update(S, d, w, t_new, div)
-                     
-                    if S.Ndt[d, t_new] == 1
-                        push!(posNdt[d], t_new)
-                    end
-                    if S.Ntw[t_new, w] == 1
-                        push!(posNtw[w], t_new)
-                    end
-    
-                    S.z[d][iv][i] = t_new  
+                    last_d = d 
+                    step = 1 
+
+                    increase(S, d, w, t_new)
+                    update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
+
+                    S.z[d][iv][i] = t_new
                 end
             end 
         end
@@ -226,7 +234,7 @@ function prior_update(S::PTM)
     S.beta = S.beta*(beta_num - T*W*digamma(S.beta))/(W*beta_den - T*W*digamma(S.beta*W))
 end
 
-function PPLEX(S::PTM, corpus_test)
+function PPLEX(S::PTM, corpus_test::Vector{Any})
     W = S.W
     
     alpha_sum = sum(S.alpha)
@@ -267,7 +275,7 @@ function sampling(S::PTM)
     S.Ndt_avg .= 1.0 / S.I .* S.Ndt .+ (S.I - 1) / S.I .* S.Ndt_avg
 end
 
-function update_and_sample(S::PTM, g, burnin, corpus_test)
+function update_and_sample(S::PTM, g::Int64, burnin::Int64, corpus_test::Vector{Any})
 
     prior_update(S)
     S.Trace[:, :, g] = S.Ndt 
@@ -287,7 +295,7 @@ function update_and_sample(S::PTM, g, burnin, corpus_test)
 end
 
 
-function Run_SPARSE(S::PTM, corpus_train, corpus_test, burnin=100, sample=50)
+function Run_SPARSE(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin=100, sample=50)
 
     init_vars(S, corpus_train, rand(S.T),rand())
     S.PX = 1000.0
@@ -296,3 +304,4 @@ function Run_SPARSE(S::PTM, corpus_train, corpus_test, burnin=100, sample=50)
     SPARSE_GIBBS(S, corpus_train, corpus_test, burnin, sample)
 end 
 end
+
