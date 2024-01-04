@@ -70,8 +70,8 @@ function update_buckets(S::PTM, d::Int64, last_d::Int64, iv::Int64, i::Int64, t_
     W = S.W
 
     if d==1 && iv == 1 && i ==1
-        S.s -= S.α[t_old]* S.β / (S.β*W + S.Nt[t_old] +1)
-        S.s += S.α[t_old]* S.β / (S.β*W + S.Nt[t_old])
+        S.s -= S.α[t_old] * S.β / (S.β*W + S.Nt[t_old] +1)
+        S.s += S.α[t_old] * S.β / (S.β*W + S.Nt[t_old])
     elseif t_new != t_old 
         S.s -= S.α[t_new] * S.β / (S.β*W + S.Nt[t_new]-1) 
         S.s -= S.α[t_old] * S.β / (S.β*W + S.Nt[t_old]+1)
@@ -80,13 +80,13 @@ function update_buckets(S::PTM, d::Int64, last_d::Int64, iv::Int64, i::Int64, t_
     end 
 
     if last_d != d 
-        S.r -= S.β*(S.Ndt[d, t_old]+1) / (S.β*W + S.Nt[t_old]+1)
-        S.r += S.β*S.Ndt[d, t_old] / (S.β*W + S.Nt[t_old])
+        S.r -= S.β * (S.Ndt[d, t_old]+1) / (S.β*W + S.Nt[t_old]+1)
+        S.r += S.β * S.Ndt[d, t_old] / (S.β*W + S.Nt[t_old])
     elseif t_new != t_old 
-        S.r -= S.β*(S.Ndt[d, t_new]-1) / (S.β*W + S.Nt[t_new]-1)
-        S.r -= S.β*(S.Ndt[d, t_old]+1) / (S.β*W + S.Nt[t_old]+1)
-        S.r += S.β*S.Ndt[d, t_new] / (S.β*W + S.Nt[t_new])
-        S.r += S.β*S.Ndt[d, t_old] / (S.β*W + S.Nt[t_old])
+        S.r -= S.β * (S.Ndt[d, t_new]-1) / (S.β*W + S.Nt[t_new]-1)
+        S.r -= S.β * (S.Ndt[d, t_old]+1) / (S.β*W + S.Nt[t_old]+1)
+        S.r += S.β * S.Ndt[d, t_new] / (S.β*W + S.Nt[t_new])
+        S.r += S.β * S.Ndt[d, t_old] / (S.β*W + S.Nt[t_old])
     end 
 end 
 
@@ -135,7 +135,7 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
         for d in 1:D
             S.r = 0.0
             for t in posNdt[d]    
-                S.r += S.β*S.Ndt[d,t] / (S.β*W + S.Nt[t]) 
+                S.r += S.β * S.Ndt[d,t] / (S.β*W + S.Nt[t]) 
                 S.f[t] = (S.α[t] + S.Ndt[d,t]) / (S.β*W + S.Nt[t]) 
             end
 
@@ -207,22 +207,22 @@ function prior_update(S::PTM)
     D, T, W = S.D, S.T, S.W
 
     A = sum(S.α)
-    b_num = 0.0
-    b_den = 0.0
+    β_num = 0.0
+    β_den = 0.0
 
     for t in 1:T
-        a_num = 0.0
-        a_den = 0.0
-        b_num += sum(digamma.(S.Ntw[t, :] .+ S.β))
-        b_den += digamma(S.Nt[t] + S.β * W)
+        α_num = 0.0
+        α_den = 0.0
+        β_num += sum(digamma.(S.Ntw[t, :] .+ S.β))
+        β_den += digamma(S.Nt[t] + S.β * W)
 
         for d in 1:D
-            a_num += digamma(S.Ndt[d, t] + S.α[t])
-            a_den += digamma(sum(S.Ndt[d, :]) + A)
+            α_num += digamma(S.Ndt[d, t] + S.α[t])
+            α_den += digamma(sum(S.Ndt[d, :]) + A)
         end
-        S.α[t] = S.α[t] * (a_num - D * digamma(S.α[t])) / (a_den - D * digamma(A))
+        S.α[t] = S.α[t] * (α_num - D * digamma(S.α[t])) / (α_den - D * digamma(A))
     end
-    S.β = S.β * (b_num - T * W * digamma(S.β)) / (W * b_den - T * W * digamma(S.β * W))
+    S.β = S.β * (β_num - T * W * digamma(S.β)) / (W * β_den - T * W * digamma(S.β * W))
 end
 
 function PPLEX(S::PTM, corpus_test::Vector{Any})
