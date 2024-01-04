@@ -12,9 +12,10 @@ mutable struct PTM
     Nd::Vector{Int64}
     Ntw_avg::Matrix{Float64}   
     Ndt_avg::Matrix{Float64} 
+    indx_dt::Matrix{Int64}
     z::Vector{Vector{Vector{Int64}}}
-    alpha::Vector{Float64}
-    beta::Float64
+    α::Vector{Float64}
+    β::Float64
     I::Int64    
     c::Float64
     PX::Float64  
@@ -23,16 +24,16 @@ mutable struct PTM
     PTM(T, W) = new(T, W)
 end
 
-function init_vars(F::PTM, corpus_train::Vector{Any}, alpha::Vector{Float64}, beta::Float64) 
+function init_vars(F::PTM, corpus_train::Vector{Any}, α::Vector{Float64}, β::Float64) 
     F.D = length(corpus_train)
-
     D, T, W = F.D, F.T, F.W
 
-    F.alpha = alpha 
-    F.beta = beta 
+    F.α = α 
+    F.β = β 
     F.Nt = zeros(T)
     F.Ntw = zeros(T, W)
     F.Ndt = zeros(D, T)  
+    F.indx_dt = zeros(D, T)
     F.Nd = zeros(D) 
     F.z = Vector{Vector{Int64}}(undef, D)
     F.c = 0.0 
@@ -86,31 +87,31 @@ function subtract(F::PTM, d::Int64, w::Int64, t_old::Int64)
 end
 
 function update_norms(F::PTM, a::Vector{Float64}, b::Vector{Float64}, d::Int64, w::Int64, 
-    t_new::Int64, t_old::Int64, d_old::Int64, w_old::Int64, indx_dt::Matrix{Int64})
+    t_new::Int64, t_old::Int64, d_old::Int64, w_old::Int64)
     T = F.T
     W = F.W
     
     if t_new != t_old 
-        F.c -= (1.0/(W*F.beta + F.Nt[t_new] -1))^3
-        F.c -= (1.0/(W*F.beta + F.Nt[t_old] +1))^3
-        F.c += (1.0/(W*F.beta + F.Nt[t_new]))^3
-        F.c += (1.0/(W*F.beta + F.Nt[t_old]))^3                           
+        F.c -= (1.0/(W*F.β + F.Nt[t_new] -1))^3
+        F.c -= (1.0/(W*F.β + F.Nt[t_old] +1))^3
+        F.c += (1.0/(W*F.β + F.Nt[t_new]))^3
+        F.c += (1.0/(W*F.β + F.Nt[t_old]))^3                           
     end 
 
     if d_old != t_old 
-        a[d] -= (F.alpha[d_old] + F.Ndt[d, d_old] -1)^3; 
-        a[d] -= (F.alpha[t_old] + F.Ndt[d, t_old] +1)^3 ;
-        a[d] += (F.alpha[d_old] + F.Ndt[d, d_old])^3
-        a[d] += (F.alpha[t_old] + F.Ndt[d, t_old])^3
+        a[d] -= (F.α[d_old] + F.Ndt[d, d_old] -1)^3; 
+        a[d] -= (F.α[t_old] + F.Ndt[d, t_old] +1)^3 ;
+        a[d] += (F.α[d_old] + F.Ndt[d, d_old])^3
+        a[d] += (F.α[t_old] + F.Ndt[d, t_old])^3
 
-        sort_update(T, F.Ndt[d, :], indx_dt[d, :], d_old, t_new)
+        sort_update(T, F.Ndt[d, :], F.indx_dt[d, :], d_old, t_new)
     end 
 
     if w_old != t_old 
-        b[w] -= (F.beta + F.Ntw[w_old, w] -1)^3
-        b[w] -= (F.beta + F.Ntw[t_old, w] +1)^3
-        b[w] += (F.beta + F.Ntw[w_old, w])^3
-        b[w] += (F.beta + F.Ntw[t_old, w])^3
+        b[w] -= (F.β + F.Ntw[w_old, w] -1)^3
+        b[w] -= (F.β + F.Ntw[t_old, w] +1)^3
+        b[w] += (F.β + F.Ntw[w_old, w])^3
+        b[w] += (F.β + F.Ntw[t_old, w])^3
     end 
 end
 
@@ -123,7 +124,6 @@ end
 function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin::Int64, sample::Int64)
     D, T, W = F.D, F.T, F.W
     iter = burnin + sample  
-    indx_dt = zeros(Int, D, T)   
     Ad = zeros(T)   
     Bw = zeros(T)
     Ct = zeros(T)
@@ -150,22 +150,21 @@ function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
                     subtract(F, d, w, t_old) 
 
                     if g == 1  
-
                         if iv == length(words) && i == Ndw 
-                            indx_dt[d, :] .= sortperm(F.Ndt[d, :], rev = true) 
+                            F.indx_dt[d, :] .= sortperm(F.Ndt[d, :], rev = true) 
                         end 
                         
                         for t in 1:T
-                            Ad[t] = (F.Ndt[d, t] + F.alpha[t])
-                            Bw[t] = (F.Ntw[t, w] + F.beta) 
-                            Ct[t] = 1.0 / (F.Nt[t] + W*F.beta) 
+                            Ad[t] = (F.Ndt[d, t] + F.α[t])
+                            Bw[t] = (F.Ntw[t, w] + F.β) 
+                            Ct[t] = 1.0 / (F.Nt[t] + W*F.β) 
                         end 
                         a[d] = sum(y -> y^3, Ad)    
                         b[w] = sum(y -> y^3, Bw) 
                         F.c = sum(y -> y^3, Ct)
                         
                         for t in 1:T 
-                            pbs[t] = (F.Ndt[d, t] + F.alpha[t]) * (F.Ntw[t, w] + F.beta) / (F.Nt[t] + W * F.beta)
+                            pbs[t] = (F.Ndt[d, t] + F.α[t]) * (F.Ntw[t, w] + F.β) / (F.Nt[t] + W * F.β)
                         end 
 
                         Z = sum(pbs)
@@ -177,19 +176,18 @@ function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
                             t_new += 1 
                             currprob += pbs[t_new]
                         end
-                        
                     else 
                         d_old = d_last[d]  
                         w_old = w_last[w] 
                         
-                        update_norms(F, a, b, d, w, t_new, t_old, d_old, w_old, indx_dt)
+                        update_norms(F, a, b, d, w, t_new, t_old, d_old, w_old)
                         
-                        aa = a[d]
-                        bb = b[w] 
-                        cc = F.c 
+                        A = a[d]
+                        B = b[w] 
+                        C = F.c 
                         
                         U = rand()  
-                        indx = indx_dt[d, :]
+                        indx = F.indx_dt[d, :]
                         
                         for t in 1:T 
                             q = indx[t] 
@@ -200,17 +198,17 @@ function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
                                 pbs[t] = 0.0
                             end 
 
-                            pbs[t] += (F.Ndt[d, q] + F.alpha[q]) * (F.Ntw[q, w] + F.beta) / (F.Nt[q] + W * F.beta) 
+                            pbs[t] += (F.Ndt[d, q] + F.α[q]) * (F.Ntw[q, w] + F.β) / (F.Nt[q] + W * F.β) 
 
-                            aa -= (F.alpha[q] + F.Ndt[d, q])^3  
-                            bb -= (F.beta + F.Ntw[q, w])^3 
-                            cc -= (1.0/(W*F.beta  + F.Nt[q]))^3
-                            aa = max(0.0, aa)
-                            bb = max(0.0, bb)
-                            cc = max(0.0, cc)
+                            A -= (F.α[q] + F.Ndt[d, q])^3  
+                            B -= (F.β + F.Ntw[q, w])^3 
+                            C -= (1.0/(W*F.β  + F.Nt[q]))^3
+                            A = max(0.0, A)
+                            B = max(0.0, B)
+                            C = max(0.0, C)
 
-                            Zp_old = Z  
-                            Z = pbs[t] + cbrt(aa * bb * cc)   
+                            Z_old = Z  
+                            Z = pbs[t] + cbrt(A * B * C)   
 
                             if pbs[t] < U * Z 
                                 continue 
@@ -218,7 +216,7 @@ function FAST_GIBBS(F::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
                                 t_new = indx[t]
                                 break 
                             else 
-                                U = (U * Zp_old - pbs[t - 1]) * Z / (Zp_old - Z) 
+                                U = (U * Z_old - pbs[t - 1]) * Z / (Z_old - Z) 
                                 for j in 1:t 
                                     if pbs[j] >= U 
                                         t_new = indx[j]
@@ -245,54 +243,50 @@ end
 function prior_update(F::PTM)   
     D, T, W = F.D, F.T, F.W
 
-    alpha_sum = sum(F.alpha)
-    beta_num = 0.0
-    beta_den = 0.0
+    A = sum(F.α)
+    β_num = 0.0
+    β_den = 0.0
 
     for t in 1:T
-
-        alpha_num = 0.0
-        alpha_den = 0.0
-        beta_num += sum(digamma.(F.Ntw[t, :] .+ F.beta))
-        beta_den += digamma(F.Nt[t] + F.beta * W)
+        α_num = 0.0
+        α_den = 0.0
+        β_num += sum(digamma.(F.Ntw[t, :] .+ F.β))
+        β_den += digamma(F.Nt[t] + F.β * W)
 
         for d in 1:D
-            alpha_num += digamma(F.Ndt[d, t] + F.alpha[t])
-            alpha_den += digamma(sum(F.Ndt[d, :]) + alpha_sum)
+            α_num += digamma(F.Ndt[d, t] + F.α[t])
+            α_den += digamma(sum(F.Ndt[d, :]) + A)
         end
-
-        F.alpha[t] = F.alpha[t] * (alpha_num - D * digamma(F.alpha[t])) / (alpha_den - D * digamma(alpha_sum))
+        F.α[t] = F.α[t] * (α_num - D * digamma(F.α[t])) / (α_den - D * digamma(A))
     end
-
-    F.beta = F.beta * (beta_num - T * W * digamma(F.beta)) / (W * beta_den - T * W * digamma(F.beta * W))
+    F.β = F.β * (β_num - T * W * digamma(F.β)) / (W * β_den - T * W * digamma(F.β * W))
 end
 
 function PPLEX(F::PTM, corpus_test::Vector{Any})
     W = F.W
-   
-    alpha_sum = sum(F.alpha)
-    N = sum(F.Nd)
-    LL = 0.0 
     
-    if F.I == 1   
+    A = sum(F.α)
+    N = sum(F.Nd)
+    lL = 0.0 
+    
+    if F.I == 1  
         F.pdw = Vector{Vector{Float64}}()
         F.pdw = [rand(Float64, length(words)) for words in corpus_test]
     end
-    
+
     for (d, words) in enumerate(corpus_test)
-        
+
         for (iw, (w, Ndw)) in enumerate(words)
             F.pdw[d][iw] *= (F.I - 1.0) / F.I  
+
+            φ = (F.Ntw[:, w] .+ F.β) / (F.Nt .+ F.β * W)
+            θ = (F.Ndt[d, :] .+ F.α) / (F.Nd[d] + A)
             
-            phi_tw = (F.Ntw[:, w] .+ F.beta) / (F.Nt .+ F.beta * W)
-            theta_dw = (F.Ndt[d, :] .+ F.alpha) / (F.Nd[d] + alpha_sum)
-    
-            F.pdw[d][iw] += sum(phi_tw .* theta_dw) / F.I  
-            LL += Ndw * log(F.pdw[d][iw])
+            F.pdw[d][iw] += sum(φ .* θ) / F.I  
+            lL += Ndw * log(F.pdw[d][iw])
         end
     end
-
-    F.PX = exp(-LL / N)  
+    F.PX = exp(-lL / N)  
 end
 
 function sampling(F::PTM)
