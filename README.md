@@ -18,24 +18,12 @@ for text in cleaned_texts
     push!(corpus, counts_tuple)
 end
 ```
-The training corpus and the testing corpus, to compute Perplexities, are obtained from the corpus. The ratio between the two is a choice of the implementer. 
-```julia
-ratio = 0.85
-corpus_train = []
-corpus_test = []
-for counts_tuple in corpus
-    Nwd, = size(counts_tuple)
-    length = Int(round(Nwd * ratio))
-    push!(corpus_train, counts_tuple[1:length])
-    push!(corpus_test, counts_tuple[length + 1:end])
-end
-```
 The main corpus is a vector of D elements, whose entries are defined as follows: 
 ```julia
 corpus[d][g] = (w, Ndw)
 
-d: Document number
-w: Word id corresponding to word at position "g"
-Ndw: Number of repetitions of word "w" in document "d"
+#d: Document number
+#w: Word id corresponding to word at position "g"
+#Ndw: Number of repetitions of word "w" in document "d"
 ```
- Each element of the corpus (corpus[d]) is a vector corresponding to one of the documents, containing the allocated indexes and number of repetitions for each word in the document. 
+ Each element (corpus[d]) is a vector corresponding to one of the documents, containing the allocated indexes and number of repetitions for each word in the document. 
