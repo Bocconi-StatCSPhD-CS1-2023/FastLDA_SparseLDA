@@ -37,9 +37,6 @@ FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 ```
 An example of output, for instance using FAST_LDA_22 is: 
 ```julia
-```julia
-julia> include("learning.jl")
-
 julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 Iter = 1
 Iter = 2
@@ -52,5 +49,4 @@ Iter = 12, Perplexity = 7.7456977244161695
 Iter = 13, Perplexity = 7.746247730839275
 ...
 ...
-```
 ```
