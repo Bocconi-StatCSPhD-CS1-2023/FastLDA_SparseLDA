@@ -11,7 +11,7 @@ corpus[d][g] = (w, Rw)
 #w: Unique word ID corresponding to the word at position "g"
 #Rw: Number of repetitions of word "w" in document "d"
 ```
- Each of the d-elements is a vector containing the allocated indexes and number of repetitions for each word in a single document. Training and testing corpuses are also defined; the training ratio is choice of the implementer (in my code it is 0.85). 
+ Each of the d-elements is a vector containing the allocated indexes and number of repetitions for each word in a single document. The unique IDs for each word are defined automatically after having cleaned and made texts homogeneous. Training and testing corpuses are also defined; the training ratio is a choice of the implementer (in my code it is 0.85). 
  # Definition of Variables
  Before running LDA, define: 
  ```julia
