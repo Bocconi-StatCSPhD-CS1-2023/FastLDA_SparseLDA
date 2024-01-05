@@ -5,7 +5,8 @@ This README is a demo to show how to run the code.
 # Initialize Corpus, Data Extraction 
 The main corpus of data is generated in the file "RunLDA.jl", splitting textual documents word-to-word and removing unnecessary characters. 
 ```julia
-....
+...
+...
 corpus = []
 for text in cleaned_texts
     w_ids = map(w -> check_id[w], text)
@@ -18,6 +19,8 @@ for text in cleaned_texts
     counts_tuple = [(w_id, counts) for (w_id, counts) in w_counts]
     push!(corpus, counts_tuple)
 end
+...
+...
 ```
 
 All words IDs as well as the size of the vocabulary and the number of running documents are defined. 
