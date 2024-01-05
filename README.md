@@ -3,14 +3,14 @@ The goal of this project is to implement SparseLDA and FastLDA, two CPU-enhancin
 Details concerning the algorithms and my coding choices are discussed in the attached pdf file. 
 This README is a demo to show how to run the code. All operations mentioned here are in the file "RunLDA.jl". 
 # Initialize Corpus, Data Extraction 
-First step is the generation of the corpus of data. 
-The main corpus is a vector of D elements, whose entries are defined as follows: 
+First step is the generation of the corpus of data. A training corpus and a testing corpus, to compute Perplexities, are then obtained from the corpus. All words IDs, as well as the size of the vocabulary and the number of running documents are defined. 
+The generated corpus is a vector of D-elements, whose entries are defined as follows: 
 ```julia
 corpus[d][g] = (w, Rw)
 
 #d: Document number
-#w: Word id corresponding to word at position "g"
+#w: Word ID corresponding to word at position "g"
 #Rw: Number of repetitions of word "w" in document "d"
 ```
- Each element (corpus[d]) is a vector corresponding to one of the documents, containing all the allocated indexes and number of repetitions for each word in the document in tuples. 
+ Each of the d-elements is a vector containing the allocated indexes and number of repetitions for each word in a single document. 
  
