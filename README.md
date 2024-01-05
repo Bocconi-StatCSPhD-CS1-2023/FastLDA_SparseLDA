@@ -3,8 +3,7 @@ The goal of this project is to implement SparseLDA and FastLDA, two CPU-enhancin
 Details concerning the algorithms and my coding choices are discussed in the attached pdf file. 
 This README is a demo to show how to run the code. All code mentioned here is in the file "RunLDA.jl". 
 # Initialize Corpus
-First step is the generation of the corpus of data. A training and testing corpus are then obtained.
-The generated corpus is a vector of D elements, whose entries are defined as follows: 
+First step is the generation of the corpus of data. The generated corpus is a vector of D elements, whose entries are defined as follows: 
 ```julia
 corpus[d][g] = (w, Rw)
 
@@ -12,7 +11,7 @@ corpus[d][g] = (w, Rw)
 #w: Unique word ID corresponding to the word at position "g"
 #Rw: Number of repetitions of word "w" in document "d"
 ```
- Each of the d-elements is a vector containing the allocated indexes and number of repetitions for each word in a single document. 
+ Each of the d-elements is a vector containing the allocated indexes and number of repetitions for each word in a single document. Training and testing corpuses are also defined; the training ratio is choice of the implementer (in my code it is 0.85). 
  # Definition of Variables
  Before running LDA, define: 
  ```julia
