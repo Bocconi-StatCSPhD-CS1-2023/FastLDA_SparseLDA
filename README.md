@@ -4,6 +4,7 @@ Details concerning the algorithms and my coding choices are discussed in the att
 This README is a demo to show how to run the code. All code mentioned here is in the file "RunLDA.jl". 
 # Initialize Corpus, Data Extraction 
 First step is the generation of the corpus of data. 
+```julia
 corpus = []
 for text in cleaned_texts
     w_ids = map(w -> check_id[w], text)
