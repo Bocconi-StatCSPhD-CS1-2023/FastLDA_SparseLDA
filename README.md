@@ -33,7 +33,7 @@ SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 ```
-An example of output is: 
+An example of output (burnin = 5): 
 ```julia
 julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 Iter = 1
@@ -47,4 +47,17 @@ Iter = 7, Perplexity = 7.7456977244161695
 Iter = 8, Perplexity = 7.746247730839275
 ...
 ...
+```
+ # Results
+ To assess the estimated topic allocation for each document: 
+ ```julia
+ julia> S.Ndt_avg
+1000×4 Matrix{Float64}:
+ 14.0   1.7   8.0  66.3
+ 10.8  25.6   7.0  35.6
+ 67.0  50.8  93.2  11.0
+  ⋮
+  4.5  38.4  33.7  35.4
+ 13.8   7.4  10.2  78.6
+ 41.4  31.5  30.4  57.7
 ```
