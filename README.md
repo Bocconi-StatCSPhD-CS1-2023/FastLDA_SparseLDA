@@ -12,5 +12,5 @@ corpus[d][g] = (w, Ndw)
 #w: Word id corresponding to word at position "g"
 #Ndw: Number of repetitions of word "w" in document "d"
 ```
- Each element (corpus[d]) is a vector corresponding to one of the documents, containing all the allocated indexes and number of repetitions for each word in the document in the form of tuples. 
+ Each element (corpus[d]) is a vector corresponding to one of the documents, containing all the allocated indexes and number of repetitions for each word in the document in tuples. 
  
