@@ -33,7 +33,7 @@ SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 ```
-An example of output, for instance using FAST_LDA_22 is: 
+An example of output is: 
 ```julia
 julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 Iter = 1
