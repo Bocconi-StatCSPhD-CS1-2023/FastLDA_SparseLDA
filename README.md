@@ -71,7 +71,7 @@ julia> F.Ndt_avg
    1.9   14.3  147.0    4.8
   19.2    9.0  117.8   35.0
 ```
-To assess the mean of topic allocations for each word: 
+To assess the mean of topic allocations for each unique word in the vocabulary: 
  ```julia
 julia> F.Ntw_avg
 4×14477 Matrix{Float64}:
