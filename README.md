@@ -23,14 +23,12 @@ burnin = 100              #Number of MCMC samples to discard
 sample = 50               #Number of MCMC samples on which to perform averages
 ```
  # Running LDA
- To Run Latent Dirichlet allocation, after having included the relevant .jl files, first define mutable structs: 
+ To Run Latent Dirichlet allocation, after having included the relevant .jl files, first define mutable structs, then run: 
 ```julia
 S = SPARSE_LDA.PTM(T, W)
 F = FAST_LDA_22.PTM(T, W)
 H = FAST_LDA_333.PTM(T, W)
-```
-Then run: 
-```julia
+
 SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
