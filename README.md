@@ -41,12 +41,12 @@ julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 Iter = 1
 Iter = 2
 Iter = 3
-...
-...
+Iter = 4
+Iter = 5
 Sampling from the posterior:
-Iter = 11, Perplexity = 7.734364357679075
-Iter = 12, Perplexity = 7.7456977244161695
-Iter = 13, Perplexity = 7.746247730839275
+Iter = 6, Perplexity = 7.734364357679075
+Iter = 7, Perplexity = 7.7456977244161695
+Iter = 8, Perplexity = 7.746247730839275
 ...
 ...
 ```
