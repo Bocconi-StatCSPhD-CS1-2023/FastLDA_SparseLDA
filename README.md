@@ -18,7 +18,7 @@ corpus[d][g] = (w, Rw)
 W = length(vocabulary)    #Size of the vocabulary
 T = 4                     #Number of topics to perform LDA(choice of the implementer) 
 burnin = 100              #Number of MCMC samples to discard 
-sample = 50               #Number of MCMC samples on which to perform averages
+sample = 50               #Number of MCMC samples to use
 ```
  # Running LDA
  To Run Latent Dirichlet allocation, after having included the relevant .jl files: 
