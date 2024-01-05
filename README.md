@@ -24,11 +24,7 @@ end
 ```
 
 All words IDs as well as the size of the vocabulary and the number of running documents are defined. 
-
-
-
-
-A training corpus, to perform LDA, and a testing corpus, to compute Perplexities, are then obtained. 
+A training corpus, to perform LDA, and a testing corpus, to compute Perplexities, are also obtained, the ratio between the two is a choice of the implementer. 
 ratio = 0.85
 corpus_train = []
 corpus_test = []
