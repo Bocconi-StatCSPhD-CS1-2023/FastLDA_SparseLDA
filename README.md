@@ -6,11 +6,11 @@ This README is a demo to show how to run the code. All operations mentioned here
 First step is the generation of the corpus of data. 
 The main corpus is a vector of D elements, whose entries are defined as follows: 
 ```julia
-corpus[d][g] = (w, Ndw)
+corpus[d][g] = (w, Rw)
 
 #d: Document number
 #w: Word id corresponding to word at position "g"
-#Ndw: Number of repetitions of word "w" in document "d"
+#Rw: Number of repetitions of word "w" in document "d"
 ```
  Each element (corpus[d]) is a vector corresponding to one of the documents, containing all the allocated indexes and number of repetitions for each word in the document in tuples. 
  
