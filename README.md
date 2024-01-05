@@ -49,9 +49,9 @@ Iter = 8, Perplexity = 7.746247730839275
 ...
 ```
  # Results
- To assess the estimated topic allocation for each document: 
+ To assess the mean of topic allocations for each document: 
  ```julia
- julia> S.Ndt_avg
+ julia> F.Ndt_avg
 1000×4 Matrix{Float64}:
  14.0   1.7   8.0  66.3
  10.8  25.6   7.0  35.6
@@ -61,3 +61,12 @@ Iter = 8, Perplexity = 7.746247730839275
  13.8   7.4  10.2  78.6
  41.4  31.5  30.4  57.7
 ```
+To assess the mean of topic allocations for each word: 
+ ```julia
+julia> F.Ntw_avg
+4×14477 Matrix{Float64}:
+ 0.0  0.0   2.8  0.0  0.1  1.0  0.0  1.0  1.0  0.0  1.0  1.0  0.0  0.4  0.0  …  0.2  2.0  1.0  0.0  0.1  0.0  0.5  1.0  1.8  0.0  0.0  0.0  0.2  0.3  0.0       
+ 0.4  0.0  52.4  0.0  0.2  0.0  0.0  0.0  0.0  1.0  0.0  0.0  1.0  3.0  0.0     0.0  0.0  0.0  0.0  1.0  0.0  1.0  0.0  0.0  2.0  2.0  0.0  1.0  1.2  1.0
+ 2.6  0.0  24.4  0.0  0.9  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.6  0.0     0.3  0.0  0.0  1.0  0.5  0.0  0.5  0.0  0.1  0.0  0.0  3.0  0.0  0.0  0.0       
+ 0.0  2.0   0.4  2.0  0.8  0.0  1.0  0.0  2.0  0.0  0.0  0.0  0.0  0.0  0.0     1.5  0.0  0.0  0.0  0.4  2.0  0.0  0.0  0.1  0.0  0.0  0.0  0.8  0.5  0.0
+ ```
