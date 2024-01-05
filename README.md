@@ -86,7 +86,7 @@ After having run LDA with one of the algorithms, it is possible to visually chec
 Trace = F.Trace
 MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
  ```
-This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a document chosen at random in the corpus. In case the number of topics is higher than 4, it is possible to check convergence of each of the document-topic chains with: 
+This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a document chosen at random in the corpus. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
  ```julia
 plot(S.Trace[1,1,:])
  ```
