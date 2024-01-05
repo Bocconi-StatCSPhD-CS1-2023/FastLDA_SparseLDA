@@ -80,3 +80,14 @@ julia> F.Ntw_avg
  2.6  0.0  24.4  0.0  0.9  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.6  0.0     0.3  0.0  0.0  1.0  0.5  0.0  0.5  0.0  0.1  0.0  0.0  3.0  0.0  0.0  0.0       
  0.0  2.0   0.4  2.0  0.8  0.0  1.0  0.0  2.0  0.0  0.0  0.0  0.0  0.0  0.0     1.5  0.0  0.0  0.0  0.4  2.0  0.0  0.0  0.1  0.0  0.0  0.0  0.8  0.5  0.0
  ```
+# Plots
+After having run LDA with one of the algorithms, it is possible to visually check MCMC convergence for document-topic allocations: 
+ ```julia
+Trace = F.Trace
+MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
+ ```
+This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a document chosen at random in the corpus. In case the number of topics is higher than 4, it is possible to check convergence of each of the document-topic chains with: 
+ ```julia
+plot(S.Trace[1,1,:])
+ ```
+However, this method only works for 1 document and 1 topic at the time. 
