@@ -5,7 +5,7 @@ This README is a demo to show how to run the code. All operations mentioned here
 # Initialize Corpus, Data Extraction 
 First step is the generation of the corpus of data. A training corpus and a testing corpus, to compute Perplexities, are obtained from the corpus.
 All words IDs, as well as size of the vocabulary and the number of running documents are defined. 
-The generated corpus is a vector of D-elements, whose entries are defined as follows: 
+The generated corpus is a vector of D elements, whose entries are defined as follows: 
 ```julia
 corpus[d][g] = (w, Rw)
 
