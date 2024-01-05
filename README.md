@@ -32,7 +32,8 @@ SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 ```
-Mutable structs must be defined separately for each of the chosen algorithms, as each one assumes heterogeneous entries. 
+Mutable structs must be defined separately for each of the chosen algorithms, as each assumes heterogeneous entries. 
+
 An example of output (burnin = 5): 
 ```julia
 julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
