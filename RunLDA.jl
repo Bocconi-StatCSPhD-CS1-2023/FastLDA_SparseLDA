@@ -7,8 +7,6 @@ include("SparseLDA.jl")
 include("MCMCPlots.jl")
 
 file_path = "AbstractsMPCSST.csv"
-cd("C:\\Users\\User\\Desktop\\CS I (Progr)")
-
 frame = CSV.File(file_path) |> DataFrame
 abstracts = frame[:, "ABSTRACTS"]
 
