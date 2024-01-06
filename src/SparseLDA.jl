@@ -45,10 +45,10 @@ function init_vars(S::PTM, corpus_train::Vector{Any}, α::Vector{Float64}, β::F
         S.z[d] = Vector{Int64}[]
 
         for iw in eachindex(corpus_d)
-            (w, Ndw) = corpus_d[iw]
+            (w, Rw) = corpus_d[iw]
             push!(S.z[d], Int64[])
 
-            for i in 1:Ndw
+            for i in 1:Rw
                 t = rand(1:T)
                 push!(S.z[d][iw], t)  
                 S.Ndt[d,t] += 1   
@@ -66,10 +66,10 @@ function subtract(S::PTM, d::Int64, w::Int64, t_old::Int64)
     S.Ntw[t_old, w] -= 1 
 end
 
-function update_buckets(S::PTM, d::Int64, last_d::Int64, iv::Int64, i::Int64, t_old::Int64, t_new::Int64)
+function update_buckets(S::PTM, d::Int64, last_d::Int64, ind_w::Int64, i::Int64, t_old::Int64, t_new::Int64)
     W = S.W
 
-    if d==1 && iv == 1 && i ==1
+    if d==1 && ind_w == 1 && i ==1
         S.s -= S.α[t_old] * S.β / (S.β*W + S.Nt[t_old] +1)
         S.s += S.α[t_old] * S.β / (S.β*W + S.Nt[t_old])
     elseif t_new != t_old 
@@ -90,7 +90,7 @@ function update_buckets(S::PTM, d::Int64, last_d::Int64, iv::Int64, i::Int64, t_
     end 
 end 
 
-function update_posf(S::PTM, posNdt::Vector{Vector{Int64}}, posNtw::Vector{Vector{Int64}}, 
+function update_pos_f(S::PTM, posNdt::Vector{Vector{Int64}}, posNtw::Vector{Vector{Int64}}, 
     d::Int64, w::Int64, t_old::Int64, t_new::Int64, step::Int64)
     W = S.W
 
@@ -120,12 +120,10 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
     iter = burnin + sample 
     t_new = 0 
     last_d = 0
-
     posNdt = [findall(e -> e != 0, S.Ndt[d, :]) for d in 1:D]
     posNtw = [findall(e -> e != 0, S.Ntw[:, w]) for w in 1:W]
 
     for g in 1:iter 
-
         S.s = 0.0
         for t in 1:T
             S.s += S.α[t] * S.β / (S.β*W + S.Nt[t])  
@@ -140,31 +138,27 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
             end
 
             words = corpus_train[d] 
-            for iv in eachindex(words) 
-
-                (w, Rep) = words[iv]
-                ts = S.z[d][iv]  
+            for ind_w in eachindex(words) 
+                (w, Rw) = words[ind_w]
+                ts = S.z[d][ind_w]  
                  
-                for i in 1:Rep 
+                for i in 1:Rw 
                     t_old = ts[i] 
-                    step = 0 
-
                     subtract(S, d, w, t_old) 
-                    update_posf(S, posNdt, posNtw, d, w, t_old, t_new, step)
-                    update_buckets(S, d, last_d, iv, i, t_old, t_new)
+                    step = 0 
+                    update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
+                    update_buckets(S, d, last_d, ind_w, i, t_old, t_new)
 
                     s = S.s
                     r = S.r 
                     q = 0.0 
-                    
                     for t in posNtw[w]   
                         q += S.Ntw[t, w] * S.f[t]   
                     end
-                    
                     Z = (s + r + q)
                     U = rand() * Z 
                     t_new = 0 
-                    
+
                     if U < s  
                         U = U + r + q 
                         for t in 1:T
@@ -191,11 +185,11 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
                         end
                     end 
                     last_d = d 
-                    step = 1 
-
                     increase(S, d, w, t_new)
-                    update_posf(S, posNdt, posNtw, d, w, t_old, t_new, step)
-                    S.z[d][iv][i] = t_new
+
+                    step = 1 
+                    update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
+                    S.z[d][ind_w][i] = t_new
                 end
             end 
         end 
@@ -239,14 +233,14 @@ function PPLEX(S::PTM, corpus_test::Vector{Any})
     
     for (d, words) in enumerate(corpus_test)
 
-        for (iw, (w, Ndw)) in enumerate(words)
-            S.pdw[d][iw] *= (S.I - 1.0)/S.I 
+        for (ind_w, (w, Rw)) in enumerate(words)
+            S.pdw[d][ind_w] *= (S.I - 1.0)/S.I 
 
             φ = (S.Ntw[:, w] .+ S.β) / (S.Nt .+ S.β * W)
             θ = (S.Ndt[d,:] .+ S.α) / (S.Nd[d] + A)
             
-            S.pdw[d][iw] += sum(φ .* θ) /S.I
-            lL += Ndw * log(S.pdw[d][iw])
+            S.pdw[d][ind_w] += sum(φ .* θ) /S.I
+            lL += Rw * log(S.pdw[d][ind_w])
         end
     end
     S.PX = exp(-lL / N)
