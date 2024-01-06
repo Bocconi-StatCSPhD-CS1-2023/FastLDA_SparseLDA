@@ -1,4 +1,4 @@
-name = "SparseLDA_FastLDA"
+name = "FastLDA_SparseLDA"
 uuid = "35544259-e89a-455f-8180-fbd740c2ded3"
 authors = ["LucaGeminiani00 <luca.geminiani@studbocconi.it>"]
 version = "0.1.0"
