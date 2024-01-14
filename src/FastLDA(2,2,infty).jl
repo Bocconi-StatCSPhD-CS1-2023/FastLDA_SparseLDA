@@ -80,12 +80,6 @@ function sort_update(T::Int64, Nt::Vector{Int64}, ind::Vector{Int64}, t_new::Int
     end
 end
 
-function subtract(F::PTM, d::Int64, w::Int64, t_old::Int64)
-    F.Nt[t_old] -= 1      
-    F.Ndt[d, t_old] -= 1  
-    F.Ntw[t_old, w] -= 1 
-end
-
 function update_norms(F::PTM, d::Int64, w::Int64, t_new::Int64, t_old::Int64, d_last::Int64, w_last::Int64)
     T = F.T
     if d_last != t_old
@@ -101,6 +95,12 @@ function update_norms(F::PTM, d::Int64, w::Int64, t_new::Int64, t_old::Int64, d_
         F.b[w] += (F.β + F.Ntw[w_last, w])^2
         F.b[w] += (F.β + F.Ntw[t_old, w])^2
     end
+end
+
+function subtract(F::PTM, d::Int64, w::Int64, t_old::Int64)
+    F.Nt[t_old] -= 1      
+    F.Ndt[d, t_old] -= 1  
+    F.Ntw[t_old, w] -= 1 
 end
 
 function increase(F::PTM, d::Int64, w::Int64, t_new::Int64)   
