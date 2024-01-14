@@ -82,11 +82,11 @@ end
 
 function update_norms(H::PTM, d::Int64, w::Int64, i::Int64, ind_w::Int64, t_new::Int64, t_old::Int64, d_last::Int64, w_last::Int64)
     T = H.T
-    W = H.W
+    W = H.W 
     if d==1 && ind_w == 1 && i ==1
         H.c -= (1.0/(W*H.β + H.Nt[t_old] +1))^3
         H.c += (1.0/(W*H.β + H.Nt[t_old]))^3
-    elseif t_new != t_old 
+    elseif t_new != t_old
         H.c -= (1.0/(W*H.β + H.Nt[t_new] -1))^3
         H.c -= (1.0/(W*H.β + H.Nt[t_old] +1))^3
         H.c += (1.0/(W*H.β + H.Nt[t_new]))^3
@@ -134,10 +134,12 @@ function FAST_GIBBS(H::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
     t_new = 0 
 
     for g = 1:iter 
-        for t in 1:T
-            Ct[t] = 1.0 / (H.Nt[t] + W*H.β) 
+        if g != 1 
+            for t in 1:T
+                Ct[t] = 1.0 / (H.Nt[t] + W*H.β) 
+            end 
+            H.c = sum(y -> y^3, Ct)
         end 
-        H.c = sum(y -> y^3, Ct)
 
         for d in 1:D
             words = corpus_train[d] 
@@ -180,7 +182,7 @@ function FAST_GIBBS(H::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any},
                         d_last = d_new[d]  
                         w_last = w_new[w] 
                         update_norms(H, d, w, i, ind_w, t_new, t_old, d_last, w_last)
-
+                
                         A = H.a[d]
                         B = H.b[w] 
                         C = H.c 
