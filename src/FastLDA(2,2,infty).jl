@@ -258,10 +258,10 @@ function PPLEX(F::PTM, corpus_test::Vector{Any})
         for (ind_w, (w, Rw)) in enumerate(words)
             F.pdw[d][ind_w] *= (F.I - 1.0) / F.I 
 
-            φ_tw = (F.Ntw[:, w] .+ F.β) / (F.Nt .+ F.β * W)
-            θ_dt = (F.Ndt[d, :] .+ F.α) / (F.Nd[d] + A)
+            φ_w = (F.Ntw[:, w] .+ F.β) / (F.Nt .+ F.β * W)
+            θ_d = (F.Ndt[d, :] .+ F.α) / (F.Nd[d] + A)
 
-            F.pdw[d][ind_w] += sum(φ_tw .* θ_dt) / F.I  
+            F.pdw[d][ind_w] += sum(φ_w .* θ_d) / F.I  
             lL += Rw * log(F.pdw[d][ind_w])
         end
     end
