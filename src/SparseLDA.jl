@@ -22,14 +22,12 @@ mutable struct PTM
     PX::Float64  
     pdw::Vector{Vector{Float64}}
     Trace::Array{Int64, 3}
-    
     PTM(T, W) = new(T, W)
 end
 
 function init_vars(S::PTM, corpus_train::Vector{Any}, α::Vector{Float64}, β::Float64)
     S.D, = size(corpus_train)
     T, D, W = S.T, S.D, S.W
-
     S.α = α 
     S.β = β 
     S.r = 0.0
@@ -60,15 +58,24 @@ function init_vars(S::PTM, corpus_train::Vector{Any}, α::Vector{Float64}, β::F
     end
 end
 
-function subtract(S::PTM, d::Int64, w::Int64, t_old::Int64)
-    S.Nt[t_old] -= 1      
-    S.Ndt[d, t_old] -= 1  
-    S.Ntw[t_old, w] -= 1 
+function update_pos_f(S::PTM, posNdt::Vector{Vector{Int64}}, posNtw::Vector{Vector{Int64}}, 
+    d::Int64, w::Int64, t_old::Int64, t_new::Int64, step::Int64)
+    W = S.W
+    if step == 0 
+        S.Ndt[d, t_old] == 0 && filter!(e->e!=t_old, posNdt[d]) 
+        S.Ntw[t_old, w] == 0 && filter!(e->e!=t_old, posNtw[w]) 
+        
+        S.f[t_old] = (S.α[t_old] + S.Ndt[d, t_old])/(S.β*W + S.Nt[t_old])
+    else
+        S.Ndt[d, t_new] == 1 && push!(posNdt[d], t_new)
+        S.Ntw[t_new, w] == 1 && push!(posNtw[w], t_new)
+
+        S.f[t_new] = (S.α[t_new] + S.Ndt[d, t_new])/(S.β*W + S.Nt[t_new]) 
+    end
 end
 
 function update_buckets(S::PTM, d::Int64, last_d::Int64, ind_w::Int64, i::Int64, t_old::Int64, t_new::Int64)
     W = S.W
-
     if d==1 && ind_w == 1 && i ==1
         S.s -= S.α[t_old] * S.β / (S.β*W + S.Nt[t_old] +1)
         S.s += S.α[t_old] * S.β / (S.β*W + S.Nt[t_old])
@@ -90,21 +97,10 @@ function update_buckets(S::PTM, d::Int64, last_d::Int64, ind_w::Int64, i::Int64,
     end 
 end 
 
-function update_pos_f(S::PTM, posNdt::Vector{Vector{Int64}}, posNtw::Vector{Vector{Int64}}, 
-    d::Int64, w::Int64, t_old::Int64, t_new::Int64, step::Int64)
-    W = S.W
-
-    if step == 0 
-        S.Ndt[d, t_old] == 0 && filter!(e->e!=t_old, posNdt[d]) 
-        S.Ntw[t_old, w] == 0 && filter!(e->e!=t_old, posNtw[w]) 
-        
-        S.f[t_old] = (S.α[t_old] + S.Ndt[d, t_old])/(S.β*W + S.Nt[t_old])
-    else
-        S.Ndt[d, t_new] == 1 && push!(posNdt[d], t_new)
-        S.Ntw[t_new, w] == 1 && push!(posNtw[w], t_new)
-
-        S.f[t_new] = (S.α[t_new] + S.Ndt[d, t_new])/(S.β*W + S.Nt[t_new]) 
-    end
+function subtract(S::PTM, d::Int64, w::Int64, t_old::Int64)
+    S.Nt[t_old] -= 1      
+    S.Ndt[d, t_old] -= 1  
+    S.Ntw[t_old, w] -= 1 
 end
 
 function increase(S::PTM, d::Int64, w::Int64, t_new::Int64)  
@@ -148,16 +144,15 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
                     step = 0 
                     update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
                     update_buckets(S, d, last_d, ind_w, i, t_old, t_new)
-
                     s = S.s
                     r = S.r 
+
                     q = 0.0 
                     for t in posNtw[w]   
                         q += S.Ntw[t, w] * S.f[t]   
                     end
                     Z = (s + r + q)
                     U = rand() * Z 
-                    t_new = 0 
 
                     if U < s  
                         U = U + r + q 
@@ -186,7 +181,6 @@ function SPARSE_GIBBS(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any
                     end 
                     last_d = d 
                     increase(S, d, w, t_new)
-
                     step = 1 
                     update_pos_f(S, posNdt, posNtw, d, w, t_old, t_new, step)
                     S.z[d][ind_w][i] = t_new
@@ -199,7 +193,6 @@ end
 
 function prior_update(S::PTM)   
     D, T, W = S.D, S.T, S.W
-
     A = sum(S.α)
     β_num = 0.0
     β_den = 0.0
@@ -209,7 +202,6 @@ function prior_update(S::PTM)
         α_den = 0.0
         β_num += sum(digamma.(S.Ntw[t, :] .+ S.β))
         β_den += digamma(S.Nt[t] + S.β * W)
-
         for d in 1:D
             α_num += digamma(S.Ndt[d, t] + S.α[t])
             α_den += digamma(sum(S.Ndt[d, :]) + A)
@@ -221,10 +213,9 @@ end
 
 function PPLEX(S::PTM, corpus_test::Vector{Any})
     W = S.W
-    
     A = sum(S.α)
     N = sum(S.Nd)
-    lL = 0.0 
+    logL = 0.0 
     
     if S.I == 1
         S.pdw = Vector{Vector{Float64}}()
@@ -232,37 +223,35 @@ function PPLEX(S::PTM, corpus_test::Vector{Any})
     end
     
     for (d, words) in enumerate(corpus_test)
-
         for (ind_w, (w, Rw)) in enumerate(words)
             S.pdw[d][ind_w] *= (S.I - 1.0)/S.I 
 
-            φ = (S.Ntw[:, w] .+ S.β) / (S.Nt .+ S.β * W)
-            θ = (S.Ndt[d,:] .+ S.α) / (S.Nd[d] + A)
+            φ_w = (S.Ntw[:, w] .+ S.β) / (S.Nt .+ S.β * W)
+            θ_d = (S.Ndt[d,:] .+ S.α) / (S.Nd[d] + A)
             
-            S.pdw[d][ind_w] += sum(φ .* θ) /S.I
-            lL += Rw * log(S.pdw[d][ind_w])
+            S.pdw[d][ind_w] += sum(φ_w .* θ_d) /S.I
+            logL += Rw * log(S.pdw[d][ind_w])
         end
     end
-    S.PX = exp(-lL / N)
+    S.PX = exp(-logL / N)
 end
 
 function sampling(S::PTM)
     T, W, D = S.T, S.W, S.D
-    
     if S.I == 1
         S.Ntw_avg = zeros(T, W)
         S.Ndt_avg = zeros(D, T)  
     end
-    
     S.Ntw_avg .= 1.0 / S.I .* S.Ntw .+ (S.I - 1) / S.I .* S.Ntw_avg
     S.Ndt_avg .= 1.0 / S.I .* S.Ndt .+ (S.I - 1) / S.I .* S.Ndt_avg
 end
 
 function update_and_sample(S::PTM, g::Int64, burnin::Int64, corpus_test::Vector{Any})
-
-    prior_update(S)
-    S.Trace[:, :, g] = S.Ndt 
-
+    S.Trace[:, :, g] = S.Ndt
+    prior_update(S) 
+    if g == 1 
+        println("Starting SPARSELDA:")
+    end 
     if g <= burnin
         println("Iter = ", g)
     end
@@ -278,7 +267,6 @@ function update_and_sample(S::PTM, g::Int64, burnin::Int64, corpus_test::Vector{
 end
 
 function Run_SPARSE(S::PTM, corpus_train::Vector{Any}, corpus_test::Vector{Any}, burnin=100, sample=50)
-
     init_vars(S, corpus_train, rand(S.T),rand())
     S.PX = 1000.0
     S.I = 0
