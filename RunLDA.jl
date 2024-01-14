@@ -45,17 +45,12 @@ end
 W = length(vocabulary)
 T = 4
 D = length(corpus)
-burnin = 30
-sample = 10
+burnin = 80
+sample = 80
 
 S = SPARSE_LDA.PTM(T, W)
 SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
 Trace = S.Trace
-MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
-
-F = FAST_LDA_22.PTM(T, W)
-FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
-Trace = F.Trace
 MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
 
 H = FAST_LDA_333.PTM(T, W)
@@ -63,3 +58,7 @@ FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 Trace = H.Trace
 MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
 
+F = FAST_LDA_22.PTM(T, W)
+FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
+Trace = F.Trace
+MCMC_Plots.Runplots(Trace, D, T, burnin + sample)
