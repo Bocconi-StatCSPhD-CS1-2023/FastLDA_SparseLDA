@@ -13,6 +13,7 @@ julia> RunLDA("Fast2")
 julia> RunLDA("Fast3")
 julia> RunLDA("All")       #Runs all the three algorithms in sequence 
 ```
+The dataset is left in the main directory of the project, so there is no need to change the directory before running LDA.
 The default settings for RunLDA are: 
 ```julia
 function RunLDA(algorithm = "All", T = 4, burnin = 50, sample = 50)
