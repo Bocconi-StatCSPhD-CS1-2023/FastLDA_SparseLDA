@@ -20,7 +20,7 @@ function Runplots(Trace::Array{Int64, 3}, D::Int64, T::Int64, iter::Int64)
     l = @layout [a{0.01h}; grid(r,2)]
     p = fill(plot(),T+1,1)
     p[1] = plot(title=tit,framestyle=nothing,showaxis=false,xticks=false,yticks=false,margin=0mm)
-    [p[i+1] = plot(time, series[:,i], linewidth=2, legend=false, titlefont=13) for i in 1:T]
+    [p[i+1] = plot(time, series[:,i], color=:blue, linewidth=2, legend=false, titlefont=13) for i in 1:T]
     plot(p..., layout=l)
 end 
 end 
