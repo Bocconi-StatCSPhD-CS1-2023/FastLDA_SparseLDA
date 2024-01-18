@@ -45,8 +45,8 @@ end
 W = length(vocabulary)
 T = 4
 D = length(corpus)
-burnin = 150
-sample = 150
+burnin = 100
+sample = 100
 
 S = SPARSE_LDA.PTM(T, W)
 SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)
