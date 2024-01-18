@@ -3,12 +3,12 @@ The goal of this project is to implement SparseLDA and FastLDA, two CPU-enhancin
 Details concerning the algorithms and efficiency considerations, as well as more detailed simulations, are discussed in the attached pdf file.
 This README is a demo to show how to run the code. All code mentioned here is in the file "RunLDA.jl". 
  # Definition of Variables
- Before running LDA, define: 
+ Before running LDA, define the variables:  
  ```julia
-W = length(vocabulary)    #Size of the vocabulary
-T = 4                     #Number of topics to perform LDA(choice of the implementer) 
-burnin = 100              #Number of MCMC samples to discard 
-sample = 100              #Number of MCMC samples to use
+function RunLDA(algorithm = "All", T = 4, burnin = 100, sample = 100) 
+T                   #Number of topics to perform LDA(choice of the implementer) 
+burnin              #Number of MCMC samples to discard 
+sample              #Number of MCMC samples to use
 ```
  # Running LDA
  To Run Latent Dirichlet allocation, after having included the relevant .jl files: 
@@ -22,10 +22,10 @@ FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
 FAST_LDA_333.Run_FAST(H, corpus_train, corpus_test, burnin, sample)
 ```
 Mutable structs must be defined separately for each of the chosen algorithms, as they assume heterogeneous entries. 
-# Output Example
+
 An example of output (burnin = 5): 
 ```julia
-julia> RunLDA(
+julia> RunLDA("Sparse", burnin = 5, sample = 200) 
 #Starting FASTLDA(2,2,infty):
 Iter = 1
 Iter = 2
