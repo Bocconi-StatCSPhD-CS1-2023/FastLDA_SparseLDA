@@ -13,18 +13,19 @@ julia> RunLDA("Fast2")
 julia> RunLDA("Fast3")
 julia> RunLDA("All")
 ```
-The default setting for RunLDA is: 
+The default settings for RunLDA are: 
 ```julia
-function RunLDA(algorithm = "All", T = 4, burnin = 100, sample = 100)
+function RunLDA(algorithm = "All", T = 4, burnin = 40, sample = 40, plots = "N")
 
-T = 4                    #Number of topics to perform LDA(choice of the implementer) 
-burnin = 100             #Number of MCMC samples to discard 
-sample = 100             #Number of MCMC samples to use
+T = 4                   #Number of topics to perform LDA(choice of the implementer) 
+burnin = 40             #Number of MCMC samples to discard 
+sample = 40             #Number of MCMC samples to use
+plots = "N"             #Including plots or not ("Y" = include plots) 
 ```
 
 An example of output (burnin = 5): 
 ```julia
-julia> RunLDA("Fast2", 4, 5, 200)
+julia> RunLDA("Fast2", 4, 5, 200, "N")
 Starting FASTLDA(2,2,infty):
 Iter = 1
 Iter = 2
