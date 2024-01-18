@@ -94,6 +94,7 @@ Each is separately defined as it assumes algorithm-specific entries.
 After having run LDA with one of the algorithms, it is possible to visually check MCMC convergence for document-topic allocations: 
  ```julia
 RunPlots(F.Trace)
+
 #Specifying the document of interest:
 RunPlots(F.Trace, 12) 
  ```
