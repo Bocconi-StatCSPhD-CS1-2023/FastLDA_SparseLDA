@@ -100,6 +100,7 @@ RunPlots(F.Trace, 12)
  ```
 This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a chosen document. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
  ```julia
+using Plots
 plot(F.Trace[d,t,:])
  ```
 However, this method only works for 1 document and 1 topic at the time. 
