@@ -18,8 +18,8 @@ The default settings for RunLDA are:
 function RunLDA(algorithm = "All", T = 4, burnin = 50, sample = 50)
 
 T = 4                   #Number of topics to perform LDA(choice of the implementer) 
-burnin = 40             #Number of MCMC samples to discard 
-sample = 40             #Number of MCMC samples to use
+burnin = 50             #Number of MCMC samples to discard 
+sample = 50             #Number of MCMC samples to use
 ```
 
 An example of output (burnin = 5): 
