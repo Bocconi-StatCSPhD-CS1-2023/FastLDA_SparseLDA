@@ -7,9 +7,9 @@ This README is a demo to show how to run the code. All code mentioned here is in
  ```julia
 function RunLDA(algorithm = "All", T = 4, burnin = 100, sample = 100)
 
-T                   #Number of topics to perform LDA(choice of the implementer) 
-burnin              #Number of MCMC samples to discard 
-sample              #Number of MCMC samples to use
+T = 4                    #Number of topics to perform LDA(choice of the implementer) 
+burnin = 100             #Number of MCMC samples to discard 
+sample = 100             #Number of MCMC samples to use
 ```
  # Running LDA
  To Run Latent Dirichlet allocation, after having included all the relevant .jl files: 
