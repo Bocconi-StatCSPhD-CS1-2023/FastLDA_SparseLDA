@@ -99,7 +99,7 @@ RunPlots(F.Trace)
 #Specifying the document of interest:
 RunPlots(F.Trace, 12) 
  ```
-This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a chosen document. This is done automatically by RunLDA when specifying "Y" as the last entry, but can also be done with RunPlots without running the entire Gibbs procedure. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
+This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a chosen document. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
  ```julia
 plot(F.Trace[d,t,:])
  ```
