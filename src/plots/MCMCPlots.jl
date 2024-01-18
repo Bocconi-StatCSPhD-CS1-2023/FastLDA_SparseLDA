@@ -3,9 +3,17 @@ module MCMC_Plots
 using Plots 
 using Measures
 
-function Runplots(Trace::Array{Int64, 3}, D::Int64, T::Int64, iter::Int64) 
+function Runplots(Trace::Array{Int64, 3}, abs = 0) 
+    D, T, iter = size(Trace)[1], size(Trace)[2], size(Trace)[3]
     time = 1:(iter) 
-    d = rand(1:D)
+    if T > 6 
+        error("Excessive Number of Topics")
+    end 
+    if abs == 0
+        d = rand(1:D)
+    else 
+        d = abs
+    end 
     tit = "Abstract:"*string(d)
     series = zeros(iter, T)
     for i = 1:T
