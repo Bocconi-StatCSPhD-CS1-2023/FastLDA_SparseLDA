@@ -24,7 +24,7 @@ sample = 100              #Number of MCMC samples to use
  To Run Latent Dirichlet allocation, after having included the relevant .jl files: 
 ```julia
 S = SPARSE_LDA.PTM(T, W)         #Mutable Struct for SparseLDA
-F = FAST_LDA_22.PTM(T, W)        #Mutable Struct for FastLDA(2,2,+\infty)
+F = FAST_LDA_22.PTM(T, W)        #Mutable Struct for FastLDA(2,2,+inf)
 H = FAST_LDA_333.PTM(T, W)       #Mutable Struct for FastLDA(3,3,3) 
 
 SPARSE_LDA.Run_SPARSE(S, corpus_train, corpus_test, burnin, sample)      
