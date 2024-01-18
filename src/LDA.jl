@@ -7,7 +7,7 @@ using SpecialFunctions
 using Plots 
 
 export RunLDA 
-export RunPlots
+export Runplots
 export F 
 export H
 export S
