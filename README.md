@@ -26,19 +26,19 @@ Mutable structs must be defined separately for each of the chosen algorithms, as
 
 An example of output (burnin = 5): 
 ```julia
-julia> RunLDA("Sparse", burnin = 5, sample = 200) 
-#Starting FASTLDA(2,2,infty):
+julia> RunLDA("Fast(2,2,infty)", 4, 5, 200)
+Starting FASTLDA(2,2,infty):
 Iter = 1
 Iter = 2
 Iter = 3
 Iter = 4
 Iter = 5
-#Sampling from the posterior:
-Iter = 6, Perplexity = 4.531108993623731
-Iter = 7, Perplexity = 4.534064445002236
-Iter = 8, Perplexity = 4.53951981935439
-Iter = 9, Perplexity = 4.544411772519728
-Iter = 10, Perplexity = 4.5467327859613675
+Sampling from the posterior:
+Iter = 6, Perplexity = 4.505722039714804
+Iter = 7, Perplexity = 4.505224901932152
+Iter = 8, Perplexity = 4.505240983564042
+Iter = 9, Perplexity = 4.5060945464958655
+Iter = 10, Perplexity = 4.504944294219416
 ...
 ...
 ```
