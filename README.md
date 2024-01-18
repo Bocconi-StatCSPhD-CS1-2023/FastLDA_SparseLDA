@@ -36,13 +36,13 @@ Mutable structs must be defined separately for each of the chosen algorithms, as
 An example of output (burnin = 5): 
 ```julia
 julia> FAST_LDA_22.Run_FAST(F, corpus_train, corpus_test, burnin, sample)
-Starting FASTLDA(2,2,infty):
+#Starting FASTLDA(2,2,infty):
 Iter = 1
 Iter = 2
 Iter = 3
 Iter = 4
 Iter = 5
-Sampling from the posterior:
+#Sampling from the posterior:
 Iter = 6, Perplexity = 4.531108993623731
 Iter = 7, Perplexity = 4.534064445002236
 Iter = 8, Perplexity = 4.53951981935439
