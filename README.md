@@ -6,10 +6,12 @@ This README is a demo to show how to run the code. All code mentioned here is in
  # Running LDA
  After having included "RunLDA.jl" and having set the correct directories for the dataset and all the source code, you can choose to run one of the three algorithms or all of them with: 
 ```julia
-RunLDA("Sparse") 
-RunLDA("Fast2")
-RunLDA("Fast3")
-RunLDA("All")
+julia> include("RunLDA.jl")
+
+julia> RunLDA("Sparse") 
+julia> RunLDA("Fast2")
+julia> RunLDA("Fast3")
+julia> RunLDA("All")
 ```
 The default setting for RunLDA is: 
 ```julia
