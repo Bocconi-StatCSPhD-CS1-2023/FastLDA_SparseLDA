@@ -93,12 +93,13 @@ Each is separately defined as it assumes algorithm-specific entries.
 # Plots
 After having run LDA with one of the algorithms, it is possible to visually check MCMC convergence for document-topic allocations: 
  ```julia
+#Document chosen at random 
 RunPlots(F.Trace)
 
 #Specifying the document of interest:
 RunPlots(F.Trace, 12) 
  ```
-This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a document chosen at random in the corpus. This is done automatically by RunLDA when specifying "Y" as the last entry. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
+This simple visualization method only works for a number of chosen topics inferior to 6. It creates plots of sampled topic allocations for each topic, from all iterations, for a chosen document. This is done automatically by RunLDA when specifying "Y" as the last entry, but can also be done with RunPlots without running the entire Gibbs procedure. In case the number of topics is higher than 6, it is possible to check convergence of each of the document-topic chains with: 
  ```julia
 plot(F.Trace[d,t,:])
  ```
