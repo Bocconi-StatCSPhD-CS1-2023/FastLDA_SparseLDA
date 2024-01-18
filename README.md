@@ -4,7 +4,7 @@ Details concerning the algorithms and efficiency considerations, as well as more
 This README is a demo to show how to run the code. All code mentioned here is in the file "RunLDA.jl". 
 
  # Running LDA
- After having included "RunLDA.jl" and having set the correct directories for the dataset and all the source code, you can choose to run one of the three algorithms or all of them with: 
+ After having included "RunLDA.jl" and having set the correct directory for the dataset and all the source code, you can choose to run one of the three algorithms or all of them with: 
 ```julia
 julia> include("RunLDA.jl")
 
