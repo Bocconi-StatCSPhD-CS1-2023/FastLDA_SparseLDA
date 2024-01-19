@@ -6,7 +6,7 @@ This README is a demo to show how to run the code. All code mentioned here is in
  # Running LDA
  Once the project environment has been activated and instantiated, the user can run each of the algorithms separately or jointly with: 
 ```julia
-#Set directory to project directory and activate the environment
+#Set directory to project directory (cd("..//FastLDA_SparseLDA")and activate the environment
 (LDA) pkg> instantiate
 julia> using LDA        
 
