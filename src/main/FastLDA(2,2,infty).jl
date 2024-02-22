@@ -65,6 +65,7 @@ function sort_update(T::Int64, Nt::Vector{Int64}, ind::Vector{Int64}, t_new::Int
     prev = 0
     t_new = ind[t_new]
     while t_new > 1 && Nt[ind[t_new]] > Nt[ind[t_new - 1]]
+        #<C> exchanging two values can be done in one line like this: ind[t_new-1], ind[t_new] = ind[t_new], ind[t_new-1]
         prev = ind[t_new]
         ind[t_new] = ind[t_new - 1]
         ind[t_new - 1] = prev

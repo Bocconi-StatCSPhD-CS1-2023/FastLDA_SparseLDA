@@ -1,0 +1,8 @@
+* Very good project
+* Excellent report (though a tad longer/more detailed than was asked)
+* About the performance issue with `sort_update`: you probably want to look at a data structure called "min-heap" https://en.wikipedia.org/wiki/Heap_(data_structure)
+* Some not-so-great practices
+  - The input filename is hard-coded, the outputs are given as global variables; instead the input filename should be an argument and the outputs returned
+  - (Use of global variables is generally not a great idea, alternatives are nearly always better)
+  - Since Run_SPARSE and Run_FAST modify their argument, their name should end with `!`. Similarly for other internal functions, e.g. sort_update
+
