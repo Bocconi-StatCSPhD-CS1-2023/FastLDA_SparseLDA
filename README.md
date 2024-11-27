@@ -1,4 +1,3 @@
-# FastLDA_SparseLDA
 
 <div align="center">
   <img src="src/plots/images/FAST(2,2,inf)_PLOT/plot.png" alt="Image 1" width="200">
@@ -17,7 +16,7 @@
     <img src="https://img.shields.io/github/license/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA" alt="License">
   </a>
 </div>
-
+# FastLDA_SparseLDA
 The goal of this project is to implement SparseLDA and FastLDA, two CPU-enhancing algorithms for Latent Dirichlet Allocation, originally proposed by [[Yao et. al., 2009]](https://www.researchgate.net/publication/221653450_Efficient_methods_for_topic_model_inference_on_streaming_document_collections) and [[Newman et. al., 2008]](https://www.researchgate.net/publication/221653277_Fast_collapsed_Gibbs_sampling_for_latent_Dirichlet_allocation). 
 Details concerning the algorithms and efficiency considerations, as well as more detailed simulations, are discussed in the attached pdf file.
 This README is a demo to show how to run the code. All code mentioned here is in the file "RunLDA.jl". 
