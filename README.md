@@ -9,12 +9,6 @@
   <a href="https://github.com/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA/releases">
     <img src="https://img.shields.io/github/v/release/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA" alt="Release">
   </a>
-  <a href="https://github.com/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA/build.yml" alt="Build Status">
-  </a>
-  <a href="https://github.com/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Bocconi-StatCSPhD-CS1-2023/FastLDA_SparseLDA" alt="License">
-  </a>
 </div>
 
 # FastLDA_SparseLDA
